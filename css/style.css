@@ -1,0 +1,74 @@
+/* Basic styling for the project */
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #F0F0F0; /* Secondary color */
+    color: #333;
+}
+
+header {
+    background-color: #008080; /* Primary color */
+    color: white; /* For better contrast on primary color */
+    padding: 1em 0;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+}
+
+h1 { /* This will style the main header "FIRECalc" */
+    color: #008080; /* Primary color */
+    text-align: center; /* As per previous style, kept for consistency */
+    padding: 1em 0; /* As per previous style, kept for consistency */
+}
+
+
+section {
+    border: 1px solid #ccc;
+    padding: 1em;
+    margin: 1em;
+    background-color: white; /* To make sections stand out from body background */
+}
+
+section h2 {
+    color: #008080; /* Primary color */
+    margin-top: 0; /* Remove default top margin for h2 within sections */
+}
+
+/* Specific styling for section titles if needed, for now, covered by section h2 */
+.section-icon {
+    width: 24px; /* Or your preferred size */
+    height: 24px; /* Or your preferred size */
+    vertical-align: middle;
+    margin-right: 8px;
+    /* Optional: to match the primary color of the text */
+    /* filter: invert(38%) sepia(13%) saturate(1954%) hue-rotate(135deg) brightness(90%) contrast(90%); */
+    /* This filter is an attempt to match #008080. Actual SVG fill is better. */
+}
+
+#portfolio h2,
+#expenses h2,
+#simulation h2 {
+    /* Primary color already applied via section h2 */
+}
+
+/* Placeholder for accent color usage, e.g., for interactive elements */
+/* .button-primary {
+    background-color: #008080; Primary color
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+.button-primary:hover {
+    background-color: #006666; Darker shade of primary
+}
+
+input:focus, textarea:focus {
+    border-color: #FFD700; Accent color for focus indication
+    outline: none;
+    box-shadow: 0 0 5px #FFD700;
+} */
