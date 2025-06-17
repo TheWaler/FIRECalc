@@ -1,12 +1,38 @@
-/* Basic styling for the project */
-body {
-    font-family: sans-serif;
+/* ==========================================================================
+   CSS Reset and Basic Defaults
+   ========================================================================== */
+*,
+*::before,
+*::after {
     margin: 0;
     padding: 0;
-    background-color: #F0F0F0; /* Secondary color */
-    color: #333;
+    box-sizing: border-box;
 }
 
+/* Sensible defaults after reset */
+body {
+    line-height: 1.6;
+    font-family: sans-serif;
+    background-color: #F0F0F0; /* Secondary color */
+    color: #333;
+    /* margin and padding are 0 from reset */
+}
+
+img, picture, video, canvas, svg {
+    display: block;
+    max-width: 100%;
+}
+
+input, button, textarea, select {
+    font: inherit; /* Ensures form elements inherit body font */
+}
+
+/* End of Reset and Basic Defaults */
+
+
+/* ==========================================================================
+   Header Styling
+   ========================================================================== */
 header {
     background-color: #008080; /* Primary color */
     color: white; /* For better contrast on primary color */
@@ -14,61 +40,383 @@ header {
     text-align: center;
 }
 
-header h1 {
-    margin: 0;
-}
+/* header h1 already has margin:0 from reset */
 
 h1 { /* This will style the main header "FIRECalc" */
     color: #008080; /* Primary color */
-    text-align: center; /* As per previous style, kept for consistency */
-    padding: 1em 0; /* As per previous style, kept for consistency */
+    text-align: center;
+    padding: 1em 0;
+    /* font-size will be default or inherited, can adjust if needed */
 }
 
 
+/* ==========================================================================
+   General Section Layout
+   ========================================================================== */
 section {
     border: 1px solid #ccc;
     padding: 1em;
-    margin: 1em;
-    background-color: white; /* To make sections stand out from body background */
+    margin: 1em; /* This margin is important to keep for sections */
+    background-color: white;
 }
 
+/* section h2 already has margin-top:0 from reset */
 section h2 {
     color: #008080; /* Primary color */
-    margin-top: 0; /* Remove default top margin for h2 within sections */
+    margin-bottom: 0.5em; /* Added margin for spacing after h2 due to reset */
 }
 
-/* Specific styling for section titles if needed, for now, covered by section h2 */
 .section-icon {
-    width: 24px; /* Or your preferred size */
-    height: 24px; /* Or your preferred size */
+    width: 24px;
+    height: 24px;
     vertical-align: middle;
     margin-right: 8px;
-    /* Optional: to match the primary color of the text */
-    /* filter: invert(38%) sepia(13%) saturate(1954%) hue-rotate(135deg) brightness(90%) contrast(90%); */
-    /* This filter is an attempt to match #008080. Actual SVG fill is better. */
 }
 
 #portfolio h2,
 #expenses h2,
 #simulation h2 {
     /* Primary color already applied via section h2 */
+    display: flex; /* Align icon and text nicely */
+    align-items: center;
 }
 
-/* Placeholder for accent color usage, e.g., for interactive elements */
-/* .button-primary {
-    background-color: #008080; Primary color
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
+/* ==========================================================================
+   Form Styling
+   ========================================================================== */
+.form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75em;
 }
 
-.button-primary:hover {
-    background-color: #006666; Darker shade of primary
+.form-group label {
+    flex-basis: 150px;
+    margin-right: 10px; /* Keep margin for spacing */
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #555;
 }
 
-input:focus, textarea:focus {
-    border-color: #FFD700; Accent color for focus indication
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select {
+    flex-grow: 1;
+    padding: 8px; /* Padding restored after reset */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    /* font-size: 1em; Inherited via font:inherit */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus,
+.form-group select:focus {
+    border-color: #FFD700;
     outline: none;
-    box-shadow: 0 0 5px #FFD700;
-} */
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+}
+
+/* ==========================================================================
+   Button Styling
+   ========================================================================== */
+button { /* General button style */
+    background-color: #008080;
+    color: white;
+    border: none; /* Important to keep after reset */
+    padding: 10px 15px; /* Padding restored */
+    border-radius: 4px;
+    cursor: pointer;
+    /* font-size: 1em; Inherited */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    margin-top: 10px; /* Increased margin-top for spacing after reset */
+    margin-bottom: 5px; /* Added margin for spacing */
+}
+
+button:hover {
+    background-color: #006666;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Buttons inside forms (Add/Update/Run) */
+#addAssetBtn, #addExpenseBtn, #runSimulationBtn {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    /* margin-top is from general button, can add more if needed */
+}
+
+/* List item buttons (Edit/Delete) */
+ul button {
+    background-color: #e0e0e0;
+    color: #333;
+    padding: 5px 10px; /* Padding restored */
+    font-size: 0.85em; /* Specific font size for smaller buttons */
+    margin-left: 5px;
+    border: 1px solid #ccc; /* Border restored */
+    /* margin-top: 0; Reset if it inherited from general button */
+    /* margin-bottom: 0; Reset if it inherited from general button */
+}
+
+ul button:hover {
+    background-color: #d0d0d0;
+    border-color: #bbb;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+/* ==========================================================================
+   List Styling (Portfolio & Expenses)
+   ========================================================================== */
+ul {
+    list-style-type: none; /* Keep after reset */
+    /* padding-left: 0; from reset */
+    margin-top: 10px; /* Add margin for spacing */
+}
+
+ul li {
+    background-color: #fff;
+    border: 1px solid #eee;
+    padding: 10px; /* Padding restored */
+    margin-bottom: 8px; /* Margin restored */
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Total value paragraphs (e.g., "Total Portfolio Value: $X") */
+section > p {
+    margin-top: 1em;
+    font-weight: bold;
+    color: #008080; /* Primary color */
+}
+
+
+/* ==========================================================================
+   Notification Styling
+   ========================================================================== */
+.notification {
+    position: fixed; /* Or 'sticky' if preferred within a container */
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 25px;
+    border-radius: 5px;
+    color: white;
+    font-size: 1em;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease, transform 0.5s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.notification.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0); /* Final position */
+}
+
+/* Initial position for slide-in effect */
+.notification:not(.show) {
+    transform: translateX(-50%) translateY(-30px);
+}
+
+
+.notification-success {
+    background-color: #28a745; /* Green for success */
+}
+
+.notification-error { /* Though not used yet, good to have */
+    background-color: #dc3545; /* Red for error */
+}
+
+/* ==========================================================================
+   Simulation Results Table Styling
+   ========================================================================== */
+#simulationResults table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 0.9em;
+}
+
+#simulationResults th,
+#simulationResults td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+#simulationResults th {
+    background-color: #e9e9e9; /* Lighter than primary, but distinct */
+    color: #333;
+    font-weight: bold;
+}
+
+#simulationResults tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+#simulationResults tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* ==========================================================================
+   Informational Text Styling (Quick Guide, Section Info)
+   ========================================================================== */
+.quick-guide {
+    background-color: #e6f7ff;
+    border-left: 5px solid #008080;
+    padding: 15px; /* Padding restored */
+    margin: 20px 1em; /* Margin restored */
+    border-radius: 0 5px 5px 0;
+}
+
+.quick-guide p {
+    margin-bottom: 0.5em; /* Ensure spacing between paragraphs in quick-guide */
+    /* line-height: 1.5; from body */
+    color: #333;
+}
+.quick-guide p:last-child {
+    margin-bottom: 0;
+}
+
+
+.quick-guide strong {
+    color: #008080;
+}
+
+.simulation-disclaimer {
+    font-style: italic;
+    font-size: 0.9em;
+    color: #555;
+    margin-top: 10px; /* Margin restored */
+}
+
+.section-info {
+    font-size: 0.9em;
+    color: #555;
+    margin-bottom: 15px; /* Margin restored */
+    /* line-height: 1.5; from body */
+}
+
+/* ==========================================================================
+   Media Queries for Responsiveness
+   ========================================================================== */
+
+/* Tablet-like screens */
+@media (max-width: 768px) {
+    .form-group {
+        flex-direction: column;
+        align-items: stretch; /* Make inputs full width */
+    }
+
+    .form-group label {
+        flex-basis: auto; /* Reset basis */
+        width: 100%;     /* Full width */
+        margin-right: 0;
+        margin-bottom: 5px; /* Space between label and input */
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group select {
+        width: 100%; /* Ensure they take full width */
+    }
+
+    #addAssetBtn, #addExpenseBtn, #runSimulationBtn {
+        width: 100%;
+        max-width: 350px; /* Prevent them from being overly wide */
+        /* margin-left: 0; Already auto from previous rule, should still center */
+        /* margin-right: 0; */
+    }
+
+    section {
+        margin: 0.75em;
+        padding: 0.75em;
+    }
+
+    .quick-guide {
+        margin: 10px 0.75em;
+        padding: 10px;
+    }
+
+    /* Make table scrollable if it's too wide */
+    #simulationResults {
+        overflow-x: auto;
+    }
+}
+
+/* Mobile-like screens */
+@media (max-width: 480px) {
+    body {
+        font-size: 0.95em; /* Slightly reduce base font for smaller screens */
+    }
+
+    header h1 {
+        font-size: 1.8em; /* Reduce header font size */
+    }
+
+    h1 { /* Main page title if it exists outside header */
+        font-size: 1.5em;
+    }
+
+    section h2 {
+        font-size: 1.3em;
+    }
+
+    button { /* General buttons */
+        padding: 8px 12px;
+        font-size: 0.95em;
+    }
+
+    #addAssetBtn, #addExpenseBtn, #runSimulationBtn {
+        /* max-width adjustment if needed, but 100% width from tablet is usually fine */
+    }
+
+    ul button { /* Edit/Delete buttons in lists */
+        padding: 4px 8px;
+        font-size: 0.8em;
+    }
+
+    ul li {
+        padding: 8px;
+        flex-direction: column; /* Stack text and buttons */
+        align-items: flex-start; /* Align items to the start */
+    }
+    ul li div:first-child { /* Assuming text content is not wrapped or is in a div */
+        margin-bottom: 5px; /* Space between text and buttons */
+    }
+    ul li button {
+        margin-left: 0; /* Remove left margin if stacked */
+        margin-top: 5px; /* Add top margin if stacked */
+    }
+
+
+    .form-group label {
+        font-size: 0.85em;
+    }
+
+    #simulationResults table {
+        font-size: 0.8em; /* Reduce table font size further */
+    }
+    #simulationResults th,
+    #simulationResults td {
+        padding: 6px; /* Reduce padding in table cells */
+    }
+
+    .quick-guide {
+        margin: 10px 0.5em;
+        padding: 8px;
+    }
+    .quick-guide p, .section-info, .simulation-disclaimer {
+        font-size: 0.9em;
+    }
+
+    .notification {
+        padding: 10px 15px;
+        font-size: 0.9em;
+        width: 90%; /* Make notification wider on small screens */
+    }
+}
