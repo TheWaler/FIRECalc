@@ -120,7 +120,7 @@ section h2 {
 /* ==========================================================================
    Button Styling
    ========================================================================== */
-button { /* General button style */
+button, .button-style-label { /* General button style, now also for labels styled as buttons */
     background-color: #008080;
     color: white;
     border: none; /* Important to keep after reset */
@@ -131,12 +131,32 @@ button { /* General button style */
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
     margin-top: 10px; /* Increased margin-top for spacing after reset */
     margin-bottom: 5px; /* Added margin for spacing */
+    display: inline-block; /* Important for labels to behave like buttons */
+    text-align: center; /* Ensure text is centered if label is wider */
 }
 
-button:hover {
+button:hover, .button-style-label:hover {
     background-color: #006666;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
+
+/* Specific styling for the file input to make the label clickable like a button */
+/* This was the inline style from index.html, now integrated here */
+.button-style-label {
+    padding: 10px 15px; /* Matched to general button padding */
+    /* background-color is inherited from the combined rule */
+    /* color is inherited */
+    /* border is inherited */
+    /* border-radius is inherited */
+    cursor: pointer;
+    /* display: inline-block; is inherited */
+    /* margin is inherited */
+}
+/* Ensure no direct styling on the hidden file input itself if it were visible */
+input[type="file"][style*="display: none"] {
+    /* No styles needed as it's hidden, but good to remember it's there */
+}
+
 
 /* Buttons inside forms (Add/Update/Run) */
 #addAssetBtn, #addExpenseBtn, #runSimulationBtn {
