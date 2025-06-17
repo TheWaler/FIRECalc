@@ -26,6 +26,12 @@ The primary goals for V1.0 are:
     *   Introduce a new input field for "Expected Annual Inflation Rate".
     *   Calculate and display both nominal and real (inflation-adjusted) returns.
     *   The formula for real rate of return will be: `((1 + Nominal Rate) / (1 + Inflation Rate)) - 1`.
+    *   **Status: Implemented**
+    *   **Summary of Changes:**
+        *   Added an input field for "Expected Annual Inflation Rate (%)" in the UI.
+        *   The simulation now calculates and displays "Projected Savings (Nominal)" and "Projected Savings (Real, Inflation-Adjusted)".
+        *   The inflation rate is now included in the data export and import functionality.
+        *   Input validation was added for the inflation rate (must be a non-negative number).
 
 #### UI Changes (index.html)
 

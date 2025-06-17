@@ -541,6 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements for Simulation
     const withdrawalRateInput = document.getElementById('withdrawalRate');
     const simulationYearsInput = document.getElementById('simulationYears');
+    const returnRateInput = document.getElementById('returnRate'); // Added for investment return rate
     const enableGuardrailCheckbox = document.getElementById('enableGuardrail');
     const expectedInflationRateInput = document.getElementById('expectedInflationRate'); // Added
     const runSimulationBtn = document.getElementById('runSimulationBtn');
@@ -558,9 +559,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function getSimulationInputs() {
         const rawPortfolioValue = totalPortfolioValueSpan.textContent.replace(/[^0-9.-]+/g, "");
         const initialPortfolioValue = parseFloat(rawPortfolioValue);
-        const withdrawalRate = parseFloat(withdrawalRateInput.value);
+        const withdrawalRate = parseFloat(withdrawalRateInput.value); // This is the SWR
         const simulationYears = parseInt(simulationYearsInput.value, 10);
-        const expectedInflationRate = parseFloat(expectedInflationRateInput.value); // Added
+        const nominalReturnRate = parseFloat(returnRateInput.value); // Nominal investment return rate
+        const expectedInflationRate = parseFloat(expectedInflationRateInput.value);
         const useGuardrail = enableGuardrailCheckbox.checked;
 
         // Validate that the portfolio has a value before simulation
@@ -576,11 +578,20 @@ document.addEventListener('DOMContentLoaded', () => {
             showNotification('Simulation years must be a positive integer.', 'error');
             return null;
         }
-        if (isNaN(expectedInflationRate) || expectedInflationRate < 0) { // Allow 0% inflation
-            showNotification('Expected inflation rate must be a non-negative number.', 'error');
+        // Validation for Expected Annual Inflation Rate: must be a number and not negative.
+        if (isNaN(expectedInflationRate)) {
+            showNotification('Expected inflation rate must be a valid number.', 'error');
             return null;
         }
-        return { initialPortfolioValue, withdrawalRate, simulationYears, useGuardrail, expectedInflationRate };
+        if (expectedInflationRate < 0) {
+            showNotification('Expected inflation rate cannot be negative. Please enter a non-negative number.', 'error');
+            return null;
+        }
+        if (isNaN(nominalReturnRate) || nominalReturnRate < 0) { // Allow 0% return
+            showNotification('Expected investment rate of return must be a non-negative number.', 'error');
+            return null;
+        }
+        return { initialPortfolioValue, withdrawalRate, simulationYears, useGuardrail, nominalReturnRate, expectedInflationRate };
     }
 
     /**
@@ -589,65 +600,80 @@ document.addEventListener('DOMContentLoaded', () => {
      * @returns {object} An object containing simulationData (array of yearly results) and depletedYear (number or -1).
      */
     function performSimulationLogic(inputs) {
-        let currentPortfolioValue = inputs.initialPortfolioValue;
-        const guardrailReferenceInitialValue = inputs.initialPortfolioValue; // For guardrail check
+        let currentPortfolioValueNominal = inputs.initialPortfolioValue;
+        const guardrailReferenceInitialValue = inputs.initialPortfolioValue;
         const simulationData = [];
         let depletedYear = -1;
-        const inflationRate = inputs.expectedInflationRate / 100; // Convert percentage to decimal
 
-        // Calculate the initial annual withdrawal amount based on the initial portfolio value
-        const initialAnnualWithdrawal = inputs.initialPortfolioValue * (inputs.withdrawalRate / 100);
+        const nominalReturnRateDecimal = inputs.nominalReturnRate / 100;
+        const inflationRateDecimal = inputs.expectedInflationRate / 100;
+        // const realReturnRateDecimal = ((1 + nominalReturnRateDecimal) / (1 + inflationRateDecimal)) - 1; // Not directly used for portfolio growth if withdrawals are inflation-adjusted separately
+
+        const initialAnnualWithdrawalNominal = inputs.initialPortfolioValue * (inputs.withdrawalRate / 100);
 
         for (let i = 0; i < inputs.simulationYears; i++) {
             const yearNumber = i + 1;
-            const portfolioAtStartOfYear = currentPortfolioValue;
-            let isAdjusted = false; // Flag to indicate if withdrawal was adjusted by guardrail
+            const portfolioAtStartOfYearNominal = currentPortfolioValueNominal;
+            let isAdjusted = false;
 
-            // Calculate inflation-adjusted withdrawal amount for the current year
-            // Withdrawal(year N) = InitialWithdrawal * (1 + InflationRate)^yearIndex
-            // yearIndex is i (0 for year 1, 1 for year 2, etc.)
-            let targetWithdrawalAmount = initialAnnualWithdrawal * Math.pow(1 + inflationRate, i);
+            // 1. Calculate current year's withdrawal amount (adjusts with inflation)
+            let targetWithdrawalAmountNominal = initialAnnualWithdrawalNominal * Math.pow(1 + inflationRateDecimal, i);
 
-            // Apply Guardrail if enabled
-            // The guardrail reduces the *target* withdrawal amount if portfolio value is below 50% of its *initial* value
-            if (inputs.useGuardrail && portfolioAtStartOfYear < (guardrailReferenceInitialValue * 0.50)) {
-                targetWithdrawalAmount *= 0.90; // Reduce withdrawal by 10%
+            // 2. Apply Guardrail if enabled (based on nominal values)
+            if (inputs.useGuardrail && portfolioAtStartOfYearNominal < (guardrailReferenceInitialValue * 0.50)) {
+                targetWithdrawalAmountNominal *= 0.90;
                 isAdjusted = true;
             }
 
-            // Ensure withdrawal does not exceed current portfolio value if it's the last bit
-            const actualWithdrawalAmount = Math.min(targetWithdrawalAmount, currentPortfolioValue);
+            // Ensure withdrawal does not exceed current portfolio value
+            const actualWithdrawalAmountNominal = Math.min(targetWithdrawalAmountNominal, currentPortfolioValueNominal);
 
-            currentPortfolioValue -= actualWithdrawalAmount; // Subtract withdrawal from portfolio
+            // 3. Subtract withdrawal
+            currentPortfolioValueNominal -= actualWithdrawalAmountNominal;
 
-            // Each yearData object: { year, startValue, withdrawal, endValue, isAdjusted }
+            // 4. Apply investment return to the remaining balance
+            currentPortfolioValueNominal *= (1 + nominalReturnRateDecimal);
+
+            // Ensure end value doesn't go negative if withdrawals exceed growth + principal
+            currentPortfolioValueNominal = Math.max(0, currentPortfolioValueNominal);
+
+
             const yearData = {
                 year: yearNumber,
-                startValue: portfolioAtStartOfYear,
-                withdrawal: actualWithdrawalAmount,
-                endValue: Math.max(0, currentPortfolioValue), // Ensure end value doesn't go negative
+                startValue: portfolioAtStartOfYearNominal,
+                withdrawal: actualWithdrawalAmountNominal,
+                endValue: currentPortfolioValueNominal,
                 isAdjusted: isAdjusted
             };
             simulationData.push(yearData);
 
-            if (currentPortfolioValue <= 0) {
+            if (currentPortfolioValueNominal <= 0) {
                 depletedYear = yearNumber;
-                // Ensure the final entry reflects exact depletion if it occurs
+                // Ensure the final entry reflects exact depletion
                 simulationData[simulationData.length - 1].endValue = 0;
-                break; // Exit loop if portfolio is depleted
+                break;
             }
         }
-        return { simulationData, depletedYear };
+        return { simulationData, depletedYear, finalNominalValue: currentPortfolioValueNominal }; // Return finalNominalValue
     }
 
     /**
      * Displays the simulation results in a table format.
-     * @param {object} results - The results from performSimulationLogic ({ simulationData, depletedYear }).
+     * @param {object} results - The results from performSimulationLogic ({ simulationData, depletedYear, finalNominalValue }).
      * @param {number} simulationYears - The total number of years the simulation was run for.
-     * @param {object} inputs - The simulation input parameters, including expectedInflationRate.
+     * @param {object} inputs - The simulation input parameters, including expectedInflationRate and nominalReturnRate.
      */
     function displaySimulationResults(results, simulationYears, inputs) {
-        simulationResultsDiv.innerHTML = ''; // Clear previous results
+        // Clear previous results, but preserve the dedicated divs for nominal/real projections
+        const tableContainer = simulationResultsDiv.querySelector('table') ? simulationResultsDiv.querySelector('table').parentNode : simulationResultsDiv;
+        if (simulationResultsDiv.querySelector('table')) {
+            simulationResultsDiv.querySelector('table').remove();
+        }
+        // Remove previous messages like "Portfolio depleted..."
+        const existingMessages = simulationResultsDiv.querySelectorAll('p.simulation-message, h3.results-title, p.inflation-note');
+        existingMessages.forEach(msg => msg.remove());
+
+
         const resultsTitle = document.createElement('h3');
         resultsTitle.textContent = 'Simulation Results';
         simulationResultsDiv.appendChild(resultsTitle);
@@ -659,6 +685,25 @@ document.addEventListener('DOMContentLoaded', () => {
             inflationNote.style.marginBottom = '10px';
             simulationResultsDiv.appendChild(inflationNote);
         }
+
+        // Ensure projectedSavingsNominal and projectedSavingsReal divs are present (they should be from HTML)
+        let projectedSavingsNominalEl = document.getElementById('projectedSavingsNominal');
+        let projectedSavingsRealEl = document.getElementById('projectedSavingsReal');
+
+        if (!projectedSavingsNominalEl) {
+            projectedSavingsNominalEl = document.createElement('div');
+            projectedSavingsNominalEl.id = 'projectedSavingsNominal';
+            simulationResultsDiv.insertBefore(projectedSavingsNominalEl, simulationResultsDiv.firstChild); // Add at top if missing
+        }
+        if (!projectedSavingsRealEl) {
+            projectedSavingsRealEl = document.createElement('div');
+            projectedSavingsRealEl.id = 'projectedSavingsReal';
+            simulationResultsDiv.insertBefore(projectedSavingsRealEl, projectedSavingsNominalEl.nextSibling); // Add after nominal if missing
+        }
+
+        projectedSavingsNominalEl.innerHTML = ''; // Clear previous content
+        projectedSavingsRealEl.innerHTML = ''; // Clear previous content
+
 
         const table = document.createElement('table');
         const thead = document.createElement('thead');
@@ -696,13 +741,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const messageElement = document.createElement('p');
         messageElement.style.fontWeight = 'bold';
+        messageElement.classList.add('simulation-message'); // Add class for easier removal
+
         if (results.depletedYear !== -1) {
             messageElement.style.color = 'red';
             messageElement.textContent = `Portfolio depleted in Year ${results.depletedYear}.`;
+            projectedSavingsNominalEl.textContent = 'Projected Savings (Nominal): $0.00 (Depleted)';
+            projectedSavingsRealEl.textContent = 'Projected Savings (Real): $0.00 (Depleted)';
         } else {
             messageElement.style.color = 'green';
             messageElement.textContent = `Portfolio survived ${simulationYears} years.`;
+
+            const finalNominalValue = results.finalNominalValue;
+            const inflationRateDecimal = inputs.expectedInflationRate / 100;
+            const finalRealValue = finalNominalValue / Math.pow(1 + inflationRateDecimal, simulationYears);
+
+            projectedSavingsNominalEl.textContent = `Projected Savings (Nominal): $${finalNominalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            projectedSavingsRealEl.textContent = `Projected Savings (Real, Inflation-Adjusted): $${finalRealValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
+        // Append the message after the table and projection divs
         simulationResultsDiv.appendChild(messageElement);
     }
 
@@ -724,8 +781,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 chartDataPoints.push(data.endValue);
             });
 
-            updateChart(chartLabels, chartDataPoints, inputs); // Pass necessary data to updateChart
-            toggleChartBtn.style.display = 'inline-block'; // Show the toggle button
+            updateChart(chartLabels, chartDataPoints, inputs);
+            toggleChartBtn.style.display = 'inline-block';
             // Ensure chart is hidden by default when new simulation is run, button text to "Show"
             chartContainer.style.display = 'none';
             toggleChartBtn.textContent = 'Show Chart';
@@ -754,7 +811,7 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: `Portfolio Value (Inflation ${inputs.expectedInflationRate}%)`,
+            label: `Portfolio Value (Nominal, Investment Return: ${inputs.nominalReturnRate}%, Inflation: ${inputs.expectedInflationRate}%)`,
                     data: dataPoints,
                     borderColor: 'rgb(75, 192, 192)',
                     backgroundColor: 'rgba(75, 192, 192, 0.2)',
@@ -830,7 +887,8 @@ document.addEventListener('DOMContentLoaded', () => {
             simulationSettings: {
                 withdrawalRate: withdrawalRateInput.value,
                 simulationYears: simulationYearsInput.value,
-                expectedInflationRate: expectedInflationRateInput.value,
+                nominalReturnRate: returnRateInput.value, // Added in a previous step, ensure it's here
+                expectedInflationRate: expectedInflationRateInput.value, // This is the target field
                 enableGuardrail: enableGuardrailCheckbox.checked
             }
         };
@@ -924,10 +982,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderExpenses(); // Update UI
 
                 // Simulation Settings
-                const { withdrawalRate, simulationYears, expectedInflationRate, enableGuardrail } = importedData.simulationSettings;
+                const { withdrawalRate, simulationYears, nominalReturnRate, expectedInflationRate, enableGuardrail } = importedData.simulationSettings;
                 withdrawalRateInput.value = withdrawalRate || '4';
                 simulationYearsInput.value = simulationYears || '30';
-                expectedInflationRateInput.value = expectedInflationRate || '2';
+                returnRateInput.value = nominalReturnRate || '7'; // Added in a previous step
+                expectedInflationRateInput.value = expectedInflationRate || '2'; // Target field
                 enableGuardrailCheckbox.checked = typeof enableGuardrail === 'boolean' ? enableGuardrail : false;
 
                 showNotification('Data imported successfully!', 'success');
