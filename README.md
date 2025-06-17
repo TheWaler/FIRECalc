@@ -27,9 +27,8 @@ FIRECalc is a simple, client-side web application to help you track your financi
 
 1.  **Clone this repository:**
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/TheWaler/FIRECalc.git
     ```
-    (Replace `<repository-url>` with the actual URL of this repository if you are cloning it.)
 2.  **Navigate to the directory:**
     ```bash
     cd FIRECalc
