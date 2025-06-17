@@ -1034,7 +1034,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const retirementAge = document.getElementById('retirement-age')?.value;
         const currentSavings = document.getElementById('current-savings')?.value;
         const monthlyContribution = document.getElementById('monthly-contribution')?.value;
-        const annualRoi = document.getElementById('annual-roi')?.value;
+        const annualRoi = document.getElementById('returnRate')?.value; // Changed from 'annual-roi'
         const inflationRate = document.getElementById('inflationRate')?.value; // Matches ID in index.html simulation section
 
         // Create an object with the data
@@ -1043,7 +1043,7 @@ document.addEventListener('DOMContentLoaded', () => {
             retirementAge: retirementAge ? parseInt(retirementAge) : null,
             currentSavings: currentSavings ? parseFloat(currentSavings) : null,
             monthlyContribution: monthlyContribution ? parseFloat(monthlyContribution) : null,
-            annualRoi: annualRoi ? parseFloat(annualRoi) : null,
+            returnRate: annualRoi ? parseFloat(annualRoi) : null, // Changed key from annualRoi
             inflationRate: inflationRate ? parseFloat(inflationRate) : null
         };
 
@@ -1096,8 +1096,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const importedData = JSON.parse(e.target.result);
 
                 // Validate expected keys
-                const requiredKeys = ['currentAge', 'retirementAge', 'currentSavings', 'monthlyContribution', 'annualRoi', 'inflationRate'];
-                const missingKeys = requiredKeys.filter(key => !(key in importedData));
+                // currentSavings is removed, annualRoi is replaced by returnRate
+                const requiredKeys = ['currentAge', 'retirementAge', 'monthlyContribution', 'returnRate', 'inflationRate'];
+                const missingKeys = requiredKeys.filter(key => {
+                    if (key === 'returnRate') {
+                        return !(importedData.hasOwnProperty('returnRate') || importedData.hasOwnProperty('annualRoi'));
+                    }
+                    return !importedData.hasOwnProperty(key);
+                });
 
                 if (missingKeys.length > 0) {
                     showNotification(`Invalid data structure. Missing keys: ${missingKeys.join(', ')}`, 'error');
@@ -1108,9 +1114,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Populate input fields
                 document.getElementById('current-age').value = importedData.currentAge;
                 document.getElementById('retirement-age').value = importedData.retirementAge;
-                document.getElementById('current-savings').value = importedData.currentSavings;
+                // current-savings line is now fully removed
                 document.getElementById('monthly-contribution').value = importedData.monthlyContribution;
-                document.getElementById('annual-roi').value = importedData.annualRoi;
+                // Use returnRate key, fallback to annualRoi for backward compatibility
+                document.getElementById('returnRate').value = importedData.returnRate || importedData.annualRoi;
                 document.getElementById('inflationRate').value = importedData.inflationRate; // Matches ID in index.html
 
                 showNotification('Simulation inputs imported successfully!', 'success');
@@ -1244,53 +1251,3 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Import Simulation Input element (import-simulation-input) not found.");
     }
 });
-
-// --- New Export Financial Plan Data Function ---
-/**
- * Exports financial planning data to a JSON file.
- */
-function exportFinancialPlanData() {
-    // Get values from the input fields
-    const currentAge = document.getElementById('current-age')?.value;
-    const retirementAge = document.getElementById('retirement-age')?.value;
-    const currentSavings = document.getElementById('current-savings')?.value;
-    const monthlyContribution = document.getElementById('monthly-contribution')?.value;
-    const annualRoi = document.getElementById('annual-roi')?.value;
-    const inflationRate = document.getElementById('inflationRate')?.value; // Matches ID in index.html simulation section
-
-    // Create an object with the data
-    const financialData = {
-        currentAge: currentAge ? parseInt(currentAge) : null,
-        retirementAge: retirementAge ? parseInt(retirementAge) : null,
-        currentSavings: currentSavings ? parseFloat(currentSavings) : null,
-        monthlyContribution: monthlyContribution ? parseFloat(monthlyContribution) : null,
-        annualRoi: annualRoi ? parseFloat(annualRoi) : null,
-        inflationRate: inflationRate ? parseFloat(inflationRate) : null
-    };
-
-    // Convert the object to a JSON string
-    const jsonString = JSON.stringify(financialData, null, 2); // Pretty print
-
-    // Create a Blob object
-    const blob = new Blob([jsonString], { type: 'application/json' });
-
-    // Create a temporary URL for the Blob
-    const url = URL.createObjectURL(blob);
-
-    // Create a temporary <a> element to trigger the download
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'financial_plan_data.json'; // Suggested filename
-
-    // Append to body, click, and remove
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    // Revoke the temporary URL
-    URL.revokeObjectURL(url);
-
-    // Optionally, show a notification (if showNotification is accessible globally or passed/imported)
-    // For now, assuming showNotification might not be in this scope or is part of the DOMContentLoaded
-    // console.log('Financial plan data export initiated.');
-}
