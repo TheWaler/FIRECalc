@@ -187,8 +187,68 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalAnnualExpensesSpan = document.getElementById('totalAnnualExpenses');
 
     let expenses = [];
-    let editingExpenseIndex = null; // To store the index of the expense being edited
+    // let editingExpenseIndex = null; // To store the index of the expense being edited - REPLACED
+    let editingExpenseId = null; // Stores ID of expense being edited
+    let currentParentIdForSubExpense = null; // Stores parent ID when adding a sub-expense
     const LOCAL_STORAGE_EXPENSES_KEY = 'fireCalcExpenses';
+
+    /**
+     * Finds an expense by its ID in a nested expense array.
+     * @param {string} id - The ID of the expense to find.
+     * @param {Array} currentExpensesArray - The array of expenses to search.
+     * @returns {object|null} The found expense object or null if not found.
+     */
+    function findExpenseById(id, currentExpensesArray) {
+        for (const expense of currentExpensesArray) {
+            if (expense.id === id) {
+                return expense;
+            }
+            if (expense.subExpenses && expense.subExpenses.length > 0) {
+                const foundInSub = findExpenseById(id, expense.subExpenses);
+                if (foundInSub) {
+                    return foundInSub;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Deletes an expense by its ID from a nested expense array.
+     * @param {string} id - The ID of the expense to delete.
+     * @param {Array} currentExpensesArray - The array of expenses to search (e.g., main expenses or subExpenses).
+     * @returns {boolean} True if an expense was deleted, false otherwise.
+     */
+    function deleteExpenseById(id, currentExpensesArray) {
+        for (let i = 0; i < currentExpensesArray.length; i++) {
+            if (currentExpensesArray[i].id === id) {
+                currentExpensesArray.splice(i, 1);
+                return true; // Expense found and deleted at this level
+            }
+            // If the current expense has sub-expenses, recursively search in them
+            if (currentExpensesArray[i].subExpenses && currentExpensesArray[i].subExpenses.length > 0) {
+                if (deleteExpenseById(id, currentExpensesArray[i].subExpenses)) {
+                    // If a sub-expense was deleted, and if the parent now has no sub-expenses
+                    // AND no amount/frequency of its own (which means it was purely a container),
+                    // it could potentially be cleaned up or converted.
+                    // For now, just ensure the deletion in sub-array is propagated.
+                    // Additional logic for parent cleanup can be added if required by product spec.
+                    // e.g. if (currentExpensesArray[i].subExpenses.length === 0 && !currentExpensesArray[i].amount) { /* decide if parent should also be removed */ }
+                    return true; // Deletion occurred in a sub-array
+                }
+            }
+        }
+        return false; // Expense not found in this array or its children
+    }
+
+
+    /**
+     * Generates a unique ID string.
+     * @returns {string} A unique ID.
+     */
+    function generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
 
     /** Saves the current expenses array to LocalStorage. */
     function saveExpenses() {
@@ -198,12 +258,25 @@ document.addEventListener('DOMContentLoaded', () => {
     /** Loads the expenses array from LocalStorage. */
     function loadExpenses() {
         const storedExpenses = localStorage.getItem(LOCAL_STORAGE_EXPENSES_KEY);
+        let dataModified = false; // Flag to track if data was changed
         if (storedExpenses) {
             try {
                 const parsedExpenses = JSON.parse(storedExpenses);
                 // Basic validation: Ensure it's an array.
                 if (Array.isArray(parsedExpenses)) {
-                    expenses = parsedExpenses;
+                    expenses = parsedExpenses.map(expense => {
+                        let currentExpense = { ...expense };
+                        if (!currentExpense.id) {
+                            currentExpense.id = generateId();
+                            dataModified = true;
+                        }
+                        if (!currentExpense.subExpenses) {
+                            currentExpense.subExpenses = [];
+                            dataModified = true;
+                        }
+                        // Future: Could also migrate other properties or validate structure here
+                        return currentExpense;
+                    });
                 } else {
                     console.error('Invalid expenses data in LocalStorage: Not an array. Initializing with empty array.');
                     expenses = [];
@@ -212,6 +285,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error parsing expenses data from LocalStorage. Initializing with empty array.', error);
                 expenses = [];
             }
+        }
+        // If data was modified during loading (e.g., adding IDs), save it back.
+        if (dataModified) {
+            saveExpenses();
         }
     }
 
@@ -236,57 +313,104 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /**
+     * Calculates the total annual amount for an expense, including its sub-expenses.
+     * @param {object} expense - The expense object.
+     * @returns {number} The total annual amount for the expense and its children.
+     */
+    function getExpenseAnnualAmount(expense) {
+        if (expense.subExpenses && expense.subExpenses.length > 0) {
+            let total = 0;
+            expense.subExpenses.forEach(subExpense => {
+                total += getExpenseAnnualAmount(subExpense);
+            });
+            return total;
+        } else {
+            // For parent expenses that might also have their own amount/frequency,
+            // ensure they are included if subExpenses is empty or not present.
+            // Or, if parent's amount/frequency should be ignored if it has children,
+            // this logic might need adjustment based on product decision.
+            // Current assumption: A parent's amount is its own, children add to it if defined at parent.
+            // For this version: if a parent has sub-expenses, its own amount/frequency are ignored for the total.
+            // If it has NO sub-expenses, its own amount/frequency are used.
+            return calculateAnnualAmount(expense.amount, expense.frequency);
+        }
+    }
+
+
+    /**
+     * Renders a single expense item and its sub-expenses.
+     * @param {object} expense - The expense object to render.
+     * @param {number} level - The nesting level (0 for top-level).
+     * @param {HTMLElement} containerElement - The UL element to append this expense to.
+     */
+    function renderSingleExpense(expense, level, containerElement) {
+        const li = document.createElement('li');
+        li.style.marginLeft = `${level * 20}px`; // Indentation for hierarchy
+        li.dataset.id = expense.id; // Set data-id attribute
+
+        const actualAnnualAmount = getExpenseAnnualAmount(expense);
+
+        // Display expense details
+        if (expense.subExpenses && expense.subExpenses.length > 0) {
+            li.textContent = `[${expense.category}] ${expense.name} - Annual: $${actualAnnualAmount.toLocaleString()}`;
+            // Optionally, indicate that this is a parent item, e.g., add a class or specific text
+        } else {
+            li.textContent = `[${expense.category}] ${expense.name}: $${expense.amount.toLocaleString()} (${expense.frequency}) - Annual: $${actualAnnualAmount.toLocaleString()}`;
+        }
+
+        // "Delete" button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.classList.add('delete-expense-btn'); // Added class for event delegation
+        deleteBtn.style.marginLeft = '5px';
+        // Onclick handler will be managed by event delegation on expenseList
+        li.appendChild(deleteBtn);
+
+        // "Edit" button
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.classList.add('edit-expense-btn'); // Added class for event delegation
+        editBtn.style.marginLeft = '5px';
+        // Onclick handler will be managed by event delegation on expenseList
+        li.appendChild(editBtn);
+
+        // "Add Sub-expense" button
+        const addSubBtn = document.createElement('button');
+        addSubBtn.textContent = 'Add Sub-expense';
+        addSubBtn.classList.add('add-sub-expense-btn'); // Added class for event delegation
+        addSubBtn.style.marginLeft = '5px';
+        // Onclick handler will be managed by event delegation on expenseList
+        li.appendChild(addSubBtn);
+
+        containerElement.appendChild(li);
+
+        // Render sub-expenses
+        if (expense.subExpenses && expense.subExpenses.length > 0) {
+            const subUl = document.createElement('ul');
+            li.appendChild(subUl); // Append sub-list to the parent li
+            expense.subExpenses.forEach(subExpense => {
+                renderSingleExpense(subExpense, level + 1, subUl);
+            });
+        }
+    }
+
+
     function renderExpenses() {
         expenseList.innerHTML = '';
-        let totalAnnualCost = 0;
+        let grandTotalAnnualCost = 0;
 
-        // Each expense object is expected to have: { name, amount, frequency, category }
-        expenses.forEach((expense, index) => {
-            const li = document.createElement('li');
-            const annualAmount = calculateAnnualAmount(expense.amount, expense.frequency);
-            // Updated to display expense category
-            li.textContent = `${expense.category}: ${expense.name} - $${expense.amount.toLocaleString()} (${expense.frequency}) - Annual: $${annualAmount.toLocaleString()}`;
-
-            // Add an Edit button for each expense
-            const editBtn = document.createElement('button');
-            editBtn.textContent = 'Edit';
-            editBtn.style.marginLeft = '10px';
-            editBtn.onclick = () => {
-                editingExpenseIndex = index;
-                expenseNameInput.value = expense.name;
-                expenseAmountInput.value = expense.amount;
-                expenseFrequencySelect.value = expense.frequency;
-                expenseCategorySelect.value = expense.category; // Set category in dropdown
-                addExpenseBtn.textContent = 'Update Expense';
-            };
-            li.appendChild(editBtn);
-
-            // Add a delete button for each expense
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'Delete';
-            deleteBtn.style.marginLeft = '5px'; // Adjusted margin
-            deleteBtn.onclick = () => {
-                const deletedExpenseName = expenses[index].name; // Capture name before splice
-
-                // If deleting the item currently being edited, reset edit mode
-                if (editingExpenseIndex === index) {
-                    resetExpenseEditMode();
-                }
-                expenses.splice(index, 1);
-                // If an item with a higher index was being edited, adjust editingExpenseIndex
-                if (editingExpenseIndex !== null && editingExpenseIndex > index) {
-                    editingExpenseIndex--;
-                }
-                renderExpenses();
-                saveExpenses(); // Save after deleting
-                showNotification(`Expense '${deletedExpenseName}' deleted.`, 'success');
-            };
-            li.appendChild(deleteBtn);
-            expenseList.appendChild(li);
-            totalAnnualCost += annualAmount;
+        // Calculate grand total first
+        expenses.forEach(topLevelExpense => {
+            grandTotalAnnualCost += getExpenseAnnualAmount(topLevelExpense);
         });
 
-        totalAnnualExpensesSpan.textContent = `$${totalAnnualCost.toLocaleString()}`;
+        // Then render each top-level expense, which will recursively render children
+        expenses.forEach(expense => {
+            renderSingleExpense(expense, 0, expenseList);
+        });
+
+        totalAnnualExpensesSpan.textContent = `$${grandTotalAnnualCost.toLocaleString()}`;
     }
 
     if (addExpenseBtn) {
@@ -296,29 +420,89 @@ document.addEventListener('DOMContentLoaded', () => {
             const frequency = expenseFrequencySelect.value;
             const category = expenseCategorySelect.value; // Get category
 
-            // Basic validation (as per existing code)
+            // Basic validation for name (applies to all modes)
             if (name === '') {
                 alert('Expense name cannot be empty.');
                 return;
             }
-            if (isNaN(amount) || amount <= 0) {
-                alert('Expense amount must be a positive number.');
-                return;
+            // Amount validation is now mode-specific below
+
+            // Order of checks: editing, then adding sub-expense, then adding top-level
+            if (editingExpenseId !== null) {
+                // --- UPDATE EXISTING EXPENSE ---
+                const expenseToUpdate = findExpenseById(editingExpenseId, expenses);
+                if (expenseToUpdate) {
+                    expenseToUpdate.name = name; // Name updated from form
+                    expenseToUpdate.category = category; // Category updated from form
+
+                    // Only update amount and frequency if it's a leaf node (form fields should be enabled)
+                    if ((!expenseToUpdate.subExpenses || expenseToUpdate.subExpenses.length === 0) && !expenseAmountInput.disabled) {
+                        const amountValue = parseFloat(expenseAmountInput.value);
+                        if (isNaN(amountValue) || amountValue <= 0) {
+                            alert('Expense amount must be a positive number for leaf expenses.');
+                            return;
+                        }
+                        expenseToUpdate.amount = amountValue;
+                        expenseToUpdate.frequency = expenseFrequencySelect.value;
+                    }
+                    // For parent nodes, their amount/frequency are derived and form fields are disabled by the edit listener.
+
+                    showNotification(`Expense '${expenseToUpdate.name}' updated successfully.`, 'success');
+                } else {
+                    showNotification('Error: Expense to update not found.', 'error');
+                }
+                resetExpenseEditMode();
+
+            } else if (currentParentIdForSubExpense !== null) {
+                // --- ADD NEW SUB-EXPENSE ---
+                const subExpenseAmount = parseFloat(expenseAmountInput.value);
+                if (isNaN(subExpenseAmount) || subExpenseAmount <= 0) {
+                     alert('Expense amount must be a positive number for sub-expenses.');
+                     return;
+                }
+                const parentExpense = findExpenseById(currentParentIdForSubExpense, expenses);
+                if (parentExpense) {
+                    const newSubExpense = {
+                        id: generateId(),
+                        name, // Name from form
+                        amount: subExpenseAmount, // Validated amount
+                        frequency, // Frequency from form
+                        category, // Category from form
+                        subExpenses: []
+                    };
+                    parentExpense.subExpenses.push(newSubExpense);
+                    showNotification(`Sub-expense '${name}' added to '${parentExpense.name}'.`, 'success');
+                } else {
+                    showNotification('Error: Parent expense not found for sub-expense.', 'error');
+                }
+                resetExpenseEditMode();
+
+            } else {
+                // --- ADD NEW TOP-LEVEL EXPENSE ---
+                const topLevelAmount = parseFloat(expenseAmountInput.value);
+                if (isNaN(topLevelAmount) || topLevelAmount <= 0) {
+                    alert('Expense amount must be a positive number.');
+                    return;
+                }
+                const newExpense = {
+                    id: generateId(),
+                    name, // Name from form
+                    amount: topLevelAmount, // Validated amount
+                    frequency, // Frequency from form
+                    category, // Category from form
+                    subExpenses: []
+                };
+                expenses.push(newExpense);
+                showNotification(`Expense '${name}' added successfully.`, 'success');
+                clearExpenseInputs(); // Standard clear for top-level add
+                // resetExpenseEditMode() is not strictly needed here if clearExpenseInputs is sufficient
+                // and we are sure editingExpenseId and currentParentIdForSubExpense are null.
+                // However, calling it ensures a fully reset state.
+                resetExpenseEditMode();
             }
 
-            if (editingExpenseIndex !== null) {
-                // Update existing expense
-                expenses[editingExpenseIndex] = { name, amount, frequency, category };
-                showNotification(`Expense '${name}' updated successfully.`, 'success');
-                resetExpenseEditMode();
-            } else {
-                // Add new expense
-                expenses.push({ name, amount, frequency, category });
-                showNotification(`Expense '${name}' added successfully.`, 'success');
-                clearExpenseInputs(); // Clear after successful add
-            }
             renderExpenses();
-            saveExpenses(); // Save after adding or updating
+            saveExpenses(); // Save after any of the above actions
         });
     } else {
         console.error('Add Expense button not found');
@@ -330,13 +514,27 @@ document.addEventListener('DOMContentLoaded', () => {
         expenseAmountInput.value = '';
         expenseFrequencySelect.value = 'monthly';
         expenseCategorySelect.value = 'Housing';
+
+        // Ensure amount and frequency fields are enabled by default
+        expenseAmountInput.disabled = false;
+        expenseFrequencySelect.disabled = false;
     }
 
     /** Resets the expense form from edit mode to add mode. */
     function resetExpenseEditMode() {
-        editingExpenseIndex = null;
-        addExpenseBtn.textContent = 'Add Expense';
-        clearExpenseInputs();
+        // editingExpenseIndex = null; // REPLACED
+        editingExpenseId = null;
+        currentParentIdForSubExpense = null; // Also reset parent ID for sub-expense mode
+        addExpenseBtn.textContent = 'Add Expense'; // Reset button text
+
+        clearExpenseInputs(); // This will also re-enable fields
+
+        // Potentially, also remove any visual indication of parent expense near the form
+        const parentInfoDiv = document.getElementById('parentExpenseInfo');
+        if (parentInfoDiv) {
+            parentInfoDiv.textContent = '';
+            parentInfoDiv.style.display = 'none';
+        }
     }
 
     // --- Withdrawal Simulation ---
@@ -498,4 +696,104 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPortfolio();
     loadExpenses();
     renderExpenses();
+
+    // Event listener for "Add Sub-expense" buttons (using event delegation)
+    if(expenseList) {
+        expenseList.addEventListener('click', (event) => {
+            if (event.target.classList.contains('add-sub-expense-btn')) {
+                const listItem = event.target.closest('li[data-id]');
+                if (listItem) {
+                    const parentId = listItem.dataset.id;
+                    const parentExpense = findExpenseById(parentId, expenses); // Fetch to display name
+
+                    resetExpenseEditMode(); // Clear any existing edit state and parentId
+                    currentParentIdForSubExpense = parentId;
+
+                    addExpenseBtn.textContent = 'Confirm Sub-expense';
+                    expenseNameInput.focus();
+
+                    // Optional: Display parent expense info near the form
+                    let parentInfoDiv = document.getElementById('parentExpenseInfo');
+                    if (!parentInfoDiv) {
+                        parentInfoDiv = document.createElement('div');
+                        parentInfoDiv.id = 'parentExpenseInfo';
+                        // Insert it before the form or in a suitable location
+                        const formElement = expenseNameInput.closest('form') || expenseNameInput.parentElement;
+                        formElement.parentNode.insertBefore(parentInfoDiv, formElement);
+                    }
+                    parentInfoDiv.textContent = `Adding sub-expense to: ${parentExpense ? parentExpense.name : 'Unknown Parent'}`;
+                    parentInfoDiv.style.display = 'block';
+                    parentInfoDiv.style.marginBottom = '10px';
+
+                    showNotification(`Enter details for sub-expense under '${parentExpense ? parentExpense.name : parentId}'.`, 'success');
+                }
+            } else if (event.target.classList.contains('edit-expense-btn')) {
+                const listItem = event.target.closest('li[data-id]');
+                if (listItem) {
+                    const expenseIdToEdit = listItem.dataset.id;
+                    const expenseToEdit = findExpenseById(expenseIdToEdit, expenses);
+
+                    if (expenseToEdit) {
+                        resetExpenseEditMode(); // Clear any other modes
+                        editingExpenseId = expenseIdToEdit;
+
+                        // Populate form
+                        expenseNameInput.value = expenseToEdit.name;
+                        expenseCategorySelect.value = expenseToEdit.category;
+
+                        if (expenseToEdit.subExpenses && expenseToEdit.subExpenses.length > 0) {
+                            // Parent node: disable amount/frequency, they are derived
+                            expenseAmountInput.value = ''; // Clear or set placeholder
+                            expenseAmountInput.disabled = true;
+                            expenseFrequencySelect.value = 'monthly'; // Reset or set placeholder
+                            expenseFrequencySelect.disabled = true;
+                            // Optionally, display text indicating these fields are not applicable
+                            // e.g. expenseAmountInput.placeholder = "N/A - Parent Expense";
+                        } else {
+                            // Leaf node: enable and populate amount/frequency
+                            expenseAmountInput.disabled = false;
+                            expenseFrequencySelect.disabled = false;
+                            expenseAmountInput.value = expenseToEdit.amount;
+                            expenseFrequencySelect.value = expenseToEdit.frequency;
+                        }
+
+                        addExpenseBtn.textContent = 'Update Expense';
+                        expenseNameInput.focus();
+                        showNotification(`Editing expense: '${expenseToEdit.name}'.`, 'success');
+                    } else {
+                        showNotification('Error: Could not find expense to edit.', 'error');
+                    }
+                }
+            } else if (event.target.classList.contains('delete-expense-btn')) {
+                const listItem = event.target.closest('li[data-id]');
+                if (listItem) {
+                    const expenseIdToDelete = listItem.dataset.id;
+                    const expenseToDelete = findExpenseById(expenseIdToDelete, expenses);
+                    const expenseName = expenseToDelete ? expenseToDelete.name : "this expense";
+
+                    if (confirm(`Are you sure you want to delete "${expenseName}" and all its sub-expenses?`)) {
+                        const deleted = deleteExpenseById(expenseIdToDelete, expenses);
+                        if (deleted) {
+                            showNotification(`Expense '${expenseName}' and its sub-expenses deleted.`, 'success');
+
+                            // If the currently edited expense or its ancestor was deleted, reset form
+                            if (editingExpenseId && !findExpenseById(editingExpenseId, expenses)) {
+                                resetExpenseEditMode();
+                            }
+                            // If the parent for a new sub-expense or its ancestor was deleted, reset form
+                            if (currentParentIdForSubExpense && !findExpenseById(currentParentIdForSubExpense, expenses)) {
+                                resetExpenseEditMode(); // Also clears currentParentIdForSubExpense
+                            }
+
+                            saveExpenses();
+                            renderExpenses(); // Re-render the list
+                        } else {
+                            // This case should ideally not be reached if buttons are correctly linked to existing items
+                            showNotification('Error: Expense not found for deletion.', 'error');
+                        }
+                    }
+                }
+            }
+        });
+    }
 });

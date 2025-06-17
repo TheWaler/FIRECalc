@@ -167,22 +167,49 @@ ul button:hover {
 /* ==========================================================================
    List Styling (Portfolio & Expenses)
    ========================================================================== */
-ul {
-    list-style-type: none; /* Keep after reset */
+ul { /* General UL styling */
+    list-style-type: none;
     /* padding-left: 0; from reset */
-    margin-top: 10px; /* Add margin for spacing */
+    margin-top: 10px;
 }
 
-ul li {
+ul li { /* General LI styling for portfolio items primarily */
     background-color: #fff;
     border: 1px solid #eee;
-    padding: 10px; /* Padding restored */
-    margin-bottom: 8px; /* Margin restored */
+    padding: 10px;
+    margin-bottom: 8px;
     border-radius: 4px;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
+
+/* Specific styling for #expenseList and its children */
+#expenseList {
+    /* Inherits general ul styling */
+}
+
+#expenseList li {
+    /* display: flex; */ /* Already set, but could be adjusted if needed for text vs buttons */
+    /* justify-content: space-between; */ /* As above */
+    /* align-items: center; */ /* As above */
+    margin-bottom: 5px; /* Consistent spacing */
+    /* Optional: border: 1px solid #eee; padding: 5px; -> Covered by general ul li */
+}
+
+/* Styling for nested ULs within #expenseList for hierarchy */
+#expenseList ul {
+    list-style-type: none; /* Remove bullets for sub-lists */
+    padding-left: 0; /* JS handles indentation via marginLeft on LIs, so reset default padding */
+    margin-top: 5px; /* Space between parent li text and its sub-list ul */
+    /* margin-left: 0; /* Optional: if you want to ensure no other inherited margin interferes */
+}
+#expenseList ul li {
+    /* Sub-items might need slightly different padding or borders if desired, e.g., less padding */
+    padding: 8px;
+    border-left: 3px solid #008080; /* Indicate nesting */
+}
+
 
 /* Total value paragraphs (e.g., "Total Portfolio Value: $X") */
 section > p {
@@ -305,6 +332,29 @@ section > p {
    Media Queries for Responsiveness
    ========================================================================== */
 
+/* Styling for the parent expense context display div */
+#parentExpenseInfo { /* Was .parent-context-display, but JS uses ID */
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    padding: 8px;
+    margin-bottom: 10px; /* Already set by JS, but good to have in CSS */
+    border-radius: 4px;
+    font-style: italic;
+    color: #333;
+    font-size: 0.9em; /* Slightly smaller text */
+}
+
+
+/* Ensure buttons within any list item are styled consistently */
+/* This rule was `ul button`, making it more specific to #expenseList if needed, or keeping it general */
+#expenseList li button, #portfolioList li button { /* Applied to both lists for consistency */
+    margin-left: 5px;
+    padding: 3px 7px; /* Slightly smaller padding for list buttons */
+    font-size: 0.9em; /* Consistent font size */
+    /* background-color, color, border are inherited from `ul button` or can be specified here */
+}
+
+
 /* Tablet-like screens */
 @media (max-width: 768px) {
     .form-group {
@@ -388,9 +438,22 @@ section > p {
     ul li div:first-child { /* Assuming text content is not wrapped or is in a div */
         margin-bottom: 5px; /* Space between text and buttons */
     }
-    ul li button {
+    /* For expense list items specifically when stacking */
+    #expenseList li {
+        flex-direction: column; /* Stack text and buttons if not already from general ul li */
+        align-items: flex-start;
+    }
+    #expenseList li button {
         margin-left: 0; /* Remove left margin if stacked */
         margin-top: 5px; /* Add top margin if stacked */
+    }
+    /* Ensure portfolio list buttons also stack if its LIs become column-oriented */
+    #portfolioList li {
+        /* If portfolio LIs also stack on mobile, this would be similar to #expenseList li */
+    }
+    #portfolioList li button {
+        /* margin-left: 0; */ /* If stacked */
+        /* margin-top: 5px; */ /* If stacked */
     }
 
 
