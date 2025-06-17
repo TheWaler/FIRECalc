@@ -55,6 +55,13 @@ The primary goals for V1.0 are:
 *   **Details:**
     *   Implement functionality to export all user inputs into a JSON file.
     *   Implement functionality to import data from a previously exported JSON file, populating the input fields.
+    *   **Status: Implemented**
+    *   **Summary of Changes:**
+        *   Implemented functionality allowing users to export and import their *simulation input parameters*.
+        *   The specific parameters included are: current age, retirement age, current savings, monthly contribution, annual ROI, and inflation rate.
+        *   This feature enables users to save different sets of simulation inputs as a JSON file (`financial_plan_data.json`) and quickly reload them.
+        *   The "Export Sim Inputs" button and "Import Sim Inputs" file input are located within the "Withdrawal Simulation" section of the UI.
+        *   The existing general "Export Data" and "Import Data" buttons in the "Data Management" section handle portfolio and expense data, and remain separate from this simulation-specific functionality.
 
 #### UI Changes (index.html)
 
