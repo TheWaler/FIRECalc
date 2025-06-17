@@ -92,6 +92,28 @@
     <section id="simulation">
         <h2><img src="assets/icons/simulation-icon.svg" alt="Simulation Icon" class="section-icon"> Withdrawal Simulation</h2>
         <p class="section-info">Simulate how long your portfolio might last based on different withdrawal strategies. Input your desired withdrawal rate and simulation period. Experiment with different rates and the simple guardrail strategy (which reduces withdrawals by 10% if the portfolio drops below 50% of its initial value) to see their impact.</p>
+
+        <div class="form-group">
+            <label for="current-age">Current Age:</label>
+            <input type="number" id="current-age" value="30">
+        </div>
+        <div class="form-group">
+            <label for="retirement-age">Expected Retirement Age:</label>
+            <input type="number" id="retirement-age" value="65">
+        </div>
+        <div class="form-group">
+            <label for="current-savings">Current Savings ($):</label>
+            <input type="number" id="current-savings" value="100000">
+        </div>
+        <div class="form-group">
+            <label for="monthly-contribution">Monthly Contribution ($):</label>
+            <input type="number" id="monthly-contribution" value="500">
+        </div>
+        <div class="form-group">
+            <label for="annual-roi">Expected Annual ROI (%):</label>
+            <input type="number" id="annual-roi" value="7" step="0.1">
+        </div>
+
         <div class="form-group">
             <label for="withdrawalRate">Withdrawal Rate (%):</label>
             <input type="number" id="withdrawalRate" value="4">
@@ -113,6 +135,9 @@
             <input type="checkbox" id="enableGuardrail">
         </div>
         <button id="runSimulationBtn">Run Simulation</button>
+        <button id="export-button">Export Sim Inputs</button> <!-- Changed text -->
+        <label for="import-simulation-input" class="button-style-label">Import Sim Inputs</label>
+        <input type="file" id="import-simulation-input" accept=".json" style="display: none;">
         <div id="simulationResults">
             <div id="projectedSavingsNominal"></div>
             <div id="projectedSavingsReal"></div>

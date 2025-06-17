@@ -1024,6 +1024,110 @@ document.addEventListener('DOMContentLoaded', () => {
     loadExpenses();
     renderExpenses();
 
+    // --- New Export Financial Plan Data Function ---
+    /**
+     * Exports financial planning data to a JSON file.
+     */
+    function exportSimulationInputs() {
+        // Get values from the input fields
+        const currentAge = document.getElementById('current-age')?.value;
+        const retirementAge = document.getElementById('retirement-age')?.value;
+        const currentSavings = document.getElementById('current-savings')?.value;
+        const monthlyContribution = document.getElementById('monthly-contribution')?.value;
+        const annualRoi = document.getElementById('annual-roi')?.value;
+        const inflationRate = document.getElementById('inflationRate')?.value; // Matches ID in index.html simulation section
+
+        // Create an object with the data
+        const financialData = {
+            currentAge: currentAge ? parseInt(currentAge) : null,
+            retirementAge: retirementAge ? parseInt(retirementAge) : null,
+            currentSavings: currentSavings ? parseFloat(currentSavings) : null,
+            monthlyContribution: monthlyContribution ? parseFloat(monthlyContribution) : null,
+            annualRoi: annualRoi ? parseFloat(annualRoi) : null,
+            inflationRate: inflationRate ? parseFloat(inflationRate) : null
+        };
+
+        // Convert the object to a JSON string
+        const jsonString = JSON.stringify(financialData, null, 2); // Pretty print
+
+        // Create a Blob object
+        const blob = new Blob([jsonString], { type: 'application/json' });
+
+        // Create a temporary URL for the Blob
+        const url = URL.createObjectURL(blob);
+
+        // Create a temporary <a> element to trigger the download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'financial_plan_data.json'; // Suggested filename
+
+        // Append to body, click, and remove
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        // Revoke the temporary URL
+        URL.revokeObjectURL(url);
+
+        showNotification('Simulation inputs exported successfully!', 'success');
+    }
+
+    /**
+     * Imports financial simulation data from a JSON file.
+     * @param {Event} event - The file input change event.
+     */
+    function importSimulationInputs(event) {
+        const file = event.target.files[0];
+
+        if (!file) {
+            showNotification('No file selected for import.', 'error');
+            return;
+        }
+
+        if (file.type !== "application/json") {
+            showNotification('Invalid file type. Please select a JSON file.', 'error');
+            event.target.value = null; // Reset file input
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const importedData = JSON.parse(e.target.result);
+
+                // Validate expected keys
+                const requiredKeys = ['currentAge', 'retirementAge', 'currentSavings', 'monthlyContribution', 'annualRoi', 'inflationRate'];
+                const missingKeys = requiredKeys.filter(key => !(key in importedData));
+
+                if (missingKeys.length > 0) {
+                    showNotification(`Invalid data structure. Missing keys: ${missingKeys.join(', ')}`, 'error');
+                    event.target.value = null; // Reset file input
+                    return;
+                }
+
+                // Populate input fields
+                document.getElementById('current-age').value = importedData.currentAge;
+                document.getElementById('retirement-age').value = importedData.retirementAge;
+                document.getElementById('current-savings').value = importedData.currentSavings;
+                document.getElementById('monthly-contribution').value = importedData.monthlyContribution;
+                document.getElementById('annual-roi').value = importedData.annualRoi;
+                document.getElementById('inflationRate').value = importedData.inflationRate; // Matches ID in index.html
+
+                showNotification('Simulation inputs imported successfully!', 'success');
+            } catch (error) {
+                console.error("Error processing imported simulation file:", error);
+                showNotification('Error processing JSON file. Ensure it is valid.', 'error');
+            } finally {
+                event.target.value = null; // Reset file input regardless of outcome
+            }
+        };
+        reader.onerror = () => {
+            showNotification('Error reading file.', 'error');
+            event.target.value = null; // Reset file input
+        };
+        reader.readAsText(file);
+    }
+
     // Event listener for "Add Sub-expense" buttons (using event delegation)
     if(expenseList) {
         expenseList.addEventListener('click', (event) => {
@@ -1123,4 +1227,70 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Add event listener for the new financial plan export button
+    const newFinancialPlanExportButton = document.getElementById('export-button');
+    if (newFinancialPlanExportButton) {
+        newFinancialPlanExportButton.addEventListener('click', exportSimulationInputs);
+    } else {
+        console.error("New Financial Plan Export Data button (export-button) not found.");
+    }
+
+    // Add event listener for the new simulation data import input
+    const importSimulationInputEl = document.getElementById('import-simulation-input');
+    if (importSimulationInputEl) {
+        importSimulationInputEl.addEventListener('change', importSimulationInputs);
+    } else {
+        console.error("Import Simulation Input element (import-simulation-input) not found.");
+    }
 });
+
+// --- New Export Financial Plan Data Function ---
+/**
+ * Exports financial planning data to a JSON file.
+ */
+function exportFinancialPlanData() {
+    // Get values from the input fields
+    const currentAge = document.getElementById('current-age')?.value;
+    const retirementAge = document.getElementById('retirement-age')?.value;
+    const currentSavings = document.getElementById('current-savings')?.value;
+    const monthlyContribution = document.getElementById('monthly-contribution')?.value;
+    const annualRoi = document.getElementById('annual-roi')?.value;
+    const inflationRate = document.getElementById('inflationRate')?.value; // Matches ID in index.html simulation section
+
+    // Create an object with the data
+    const financialData = {
+        currentAge: currentAge ? parseInt(currentAge) : null,
+        retirementAge: retirementAge ? parseInt(retirementAge) : null,
+        currentSavings: currentSavings ? parseFloat(currentSavings) : null,
+        monthlyContribution: monthlyContribution ? parseFloat(monthlyContribution) : null,
+        annualRoi: annualRoi ? parseFloat(annualRoi) : null,
+        inflationRate: inflationRate ? parseFloat(inflationRate) : null
+    };
+
+    // Convert the object to a JSON string
+    const jsonString = JSON.stringify(financialData, null, 2); // Pretty print
+
+    // Create a Blob object
+    const blob = new Blob([jsonString], { type: 'application/json' });
+
+    // Create a temporary URL for the Blob
+    const url = URL.createObjectURL(blob);
+
+    // Create a temporary <a> element to trigger the download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'financial_plan_data.json'; // Suggested filename
+
+    // Append to body, click, and remove
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    // Revoke the temporary URL
+    URL.revokeObjectURL(url);
+
+    // Optionally, show a notification (if showNotification is accessible globally or passed/imported)
+    // For now, assuming showNotification might not be in this scope or is part of the DOMContentLoaded
+    // console.log('Financial plan data export initiated.');
+}
