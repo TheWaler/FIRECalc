@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Validate asset name
             if (name === '') {
-                alert('Asset name cannot be empty.');
+                showNotification('Asset name cannot be empty.', 'error');
                 return; // Stop execution if validation fails
             }
 
@@ -134,12 +134,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (isNaN(value)) {
                 // This catches empty string, non-numeric strings
-                alert('Asset value must be a valid number.');
+                showNotification('Asset value must be a valid number.', 'error');
                 return; // Stop execution if validation fails
             }
 
             if (value <= 0) {
-                alert('Asset value must be a positive number.');
+                showNotification('Asset value must be a positive number.', 'error');
                 return; // Stop execution if validation fails
             }
 
@@ -422,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Basic validation for name (applies to all modes)
             if (name === '') {
-                alert('Expense name cannot be empty.');
+                showNotification('Expense name cannot be empty.', 'error');
                 return;
             }
             // Amount validation is now mode-specific below
@@ -439,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if ((!expenseToUpdate.subExpenses || expenseToUpdate.subExpenses.length === 0) && !expenseAmountInput.disabled) {
                         const amountValue = parseFloat(expenseAmountInput.value);
                         if (isNaN(amountValue) || amountValue <= 0) {
-                            alert('Expense amount must be a positive number for leaf expenses.');
+                            showNotification('Expense amount must be a positive number for leaf expenses.', 'error');
                             return;
                         }
                         expenseToUpdate.amount = amountValue;
@@ -457,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // --- ADD NEW SUB-EXPENSE ---
                 const subExpenseAmount = parseFloat(expenseAmountInput.value);
                 if (isNaN(subExpenseAmount) || subExpenseAmount <= 0) {
-                     alert('Expense amount must be a positive number for sub-expenses.');
+                     showNotification('Expense amount must be a positive number for sub-expenses.', 'error');
                      return;
                 }
                 const parentExpense = findExpenseById(currentParentIdForSubExpense, expenses);
@@ -481,7 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // --- ADD NEW TOP-LEVEL EXPENSE ---
                 const topLevelAmount = parseFloat(expenseAmountInput.value);
                 if (isNaN(topLevelAmount) || topLevelAmount <= 0) {
-                    alert('Expense amount must be a positive number.');
+                    showNotification('Expense amount must be a positive number.', 'error');
                     return;
                 }
                 const newExpense = {
@@ -542,8 +542,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const withdrawalRateInput = document.getElementById('withdrawalRate');
     const simulationYearsInput = document.getElementById('simulationYears');
     const enableGuardrailCheckbox = document.getElementById('enableGuardrail');
+    const expectedInflationRateInput = document.getElementById('expectedInflationRate'); // Added
     const runSimulationBtn = document.getElementById('runSimulationBtn');
     const simulationResultsDiv = document.getElementById('simulationResults');
+    const toggleChartBtn = document.getElementById('toggleChartBtn'); // Chart button
+    const chartContainer = document.getElementById('chartContainer'); // Chart container div
+    const simulationChartCanvas = document.getElementById('simulationChart'); // Canvas element
+
+    let currentChart = null; // To hold the chart instance
 
     /**
      * Gathers and validates inputs for the withdrawal simulation.
@@ -554,22 +560,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const initialPortfolioValue = parseFloat(rawPortfolioValue);
         const withdrawalRate = parseFloat(withdrawalRateInput.value);
         const simulationYears = parseInt(simulationYearsInput.value, 10);
+        const expectedInflationRate = parseFloat(expectedInflationRateInput.value); // Added
         const useGuardrail = enableGuardrailCheckbox.checked;
 
         // Validate that the portfolio has a value before simulation
         if (isNaN(initialPortfolioValue) || initialPortfolioValue <= 0) { // Check for <=0 for meaningful simulation
-            alert('Initial portfolio value must be positive. Please add assets to your portfolio.');
+            showNotification('Initial portfolio value must be positive. Please add assets to your portfolio.', 'error');
             return null;
         }
         if (isNaN(withdrawalRate) || withdrawalRate <= 0) {
-            alert('Withdrawal rate must be a positive number.');
+            showNotification('Withdrawal rate must be a positive number.', 'error');
             return null;
         }
         if (isNaN(simulationYears) || simulationYears <= 0) {
-            alert('Simulation years must be a positive integer.');
+            showNotification('Simulation years must be a positive integer.', 'error');
             return null;
         }
-        return { initialPortfolioValue, withdrawalRate, simulationYears, useGuardrail };
+        if (isNaN(expectedInflationRate) || expectedInflationRate < 0) { // Allow 0% inflation
+            showNotification('Expected inflation rate must be a non-negative number.', 'error');
+            return null;
+        }
+        return { initialPortfolioValue, withdrawalRate, simulationYears, useGuardrail, expectedInflationRate };
     }
 
     /**
@@ -579,24 +590,33 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function performSimulationLogic(inputs) {
         let currentPortfolioValue = inputs.initialPortfolioValue;
-        // Store the initial portfolio value at the start of the simulation for guardrail percentage calculation
-        const guardrailReferenceInitialValue = inputs.initialPortfolioValue;
+        const guardrailReferenceInitialValue = inputs.initialPortfolioValue; // For guardrail check
         const simulationData = [];
         let depletedYear = -1;
+        const inflationRate = inputs.expectedInflationRate / 100; // Convert percentage to decimal
+
+        // Calculate the initial annual withdrawal amount based on the initial portfolio value
+        const initialAnnualWithdrawal = inputs.initialPortfolioValue * (inputs.withdrawalRate / 100);
 
         for (let i = 0; i < inputs.simulationYears; i++) {
             const yearNumber = i + 1;
             const portfolioAtStartOfYear = currentPortfolioValue;
             let isAdjusted = false; // Flag to indicate if withdrawal was adjusted by guardrail
 
-            // Calculate standard withdrawal amount for the year
-            let actualWithdrawalAmount = portfolioAtStartOfYear * (inputs.withdrawalRate / 100);
+            // Calculate inflation-adjusted withdrawal amount for the current year
+            // Withdrawal(year N) = InitialWithdrawal * (1 + InflationRate)^yearIndex
+            // yearIndex is i (0 for year 1, 1 for year 2, etc.)
+            let targetWithdrawalAmount = initialAnnualWithdrawal * Math.pow(1 + inflationRate, i);
 
-            // Apply Guardrail if enabled and portfolio value is below 50% of its initial value
+            // Apply Guardrail if enabled
+            // The guardrail reduces the *target* withdrawal amount if portfolio value is below 50% of its *initial* value
             if (inputs.useGuardrail && portfolioAtStartOfYear < (guardrailReferenceInitialValue * 0.50)) {
-                actualWithdrawalAmount *= 0.90; // Reduce withdrawal by 10%
+                targetWithdrawalAmount *= 0.90; // Reduce withdrawal by 10%
                 isAdjusted = true;
             }
+
+            // Ensure withdrawal does not exceed current portfolio value if it's the last bit
+            const actualWithdrawalAmount = Math.min(targetWithdrawalAmount, currentPortfolioValue);
 
             currentPortfolioValue -= actualWithdrawalAmount; // Subtract withdrawal from portfolio
 
@@ -624,12 +644,21 @@ document.addEventListener('DOMContentLoaded', () => {
      * Displays the simulation results in a table format.
      * @param {object} results - The results from performSimulationLogic ({ simulationData, depletedYear }).
      * @param {number} simulationYears - The total number of years the simulation was run for.
+     * @param {object} inputs - The simulation input parameters, including expectedInflationRate.
      */
-    function displaySimulationResults(results, simulationYears) {
-        simulationResultsDiv.innerHTML = '';
+    function displaySimulationResults(results, simulationYears, inputs) {
+        simulationResultsDiv.innerHTML = ''; // Clear previous results
         const resultsTitle = document.createElement('h3');
         resultsTitle.textContent = 'Simulation Results';
         simulationResultsDiv.appendChild(resultsTitle);
+
+        if (inputs && typeof inputs.expectedInflationRate !== 'undefined') {
+            const inflationNote = document.createElement('p');
+            inflationNote.textContent = `Withdrawal amounts are adjusted for an annual inflation rate of ${inputs.expectedInflationRate}%.`;
+            inflationNote.style.fontStyle = 'italic';
+            inflationNote.style.marginBottom = '10px';
+            simulationResultsDiv.appendChild(inflationNote);
+        }
 
         const table = document.createElement('table');
         const thead = document.createElement('thead');
@@ -683,12 +712,251 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!inputs) return;
 
             const simulationResults = performSimulationLogic(inputs);
-            displaySimulationResults(simulationResults, inputs.simulationYears);
+            displaySimulationResults(simulationResults, inputs.simulationYears, inputs);
+
+            // Prepare data for chart after displaying table results
+            // The chart will show portfolio value over time.
+            // Year 0 is initial portfolio value. Subsequent years are endValue from simulationData.
+            const chartLabels = ['Year 0'];
+            const chartDataPoints = [inputs.initialPortfolioValue];
+            simulationResults.simulationData.forEach(data => {
+                chartLabels.push(`Year ${data.year}`);
+                chartDataPoints.push(data.endValue);
+            });
+
+            updateChart(chartLabels, chartDataPoints, inputs); // Pass necessary data to updateChart
+            toggleChartBtn.style.display = 'inline-block'; // Show the toggle button
+            // Ensure chart is hidden by default when new simulation is run, button text to "Show"
+            chartContainer.style.display = 'none';
+            toggleChartBtn.textContent = 'Show Chart';
+
+
             showNotification('Simulation complete.', 'success');
         });
     } else {
         console.error('Run Simulation button not found');
     }
+
+    /**
+     * Updates or creates the simulation chart.
+     * @param {Array<string>} labels - Array of labels for the X-axis (e.g., ['Year 0', 'Year 1', ...]).
+     * @param {Array<number>} dataPoints - Array of data points for the Y-axis (portfolio values).
+     * @param {object} inputs - The simulation input parameters for context in chart title or labels.
+     */
+    function updateChart(labels, dataPoints, inputs) {
+        if (currentChart) {
+            currentChart.destroy(); // Destroy existing chart instance before creating a new one
+        }
+
+        const ctx = simulationChartCanvas.getContext('2d');
+        currentChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: `Portfolio Value (Inflation ${inputs.expectedInflationRate}%)`,
+                    data: dataPoints,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // Allow chart to not be square
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Portfolio Value ($)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Year'
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += '$' + context.parsed.y.toLocaleString();
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    if (toggleChartBtn) {
+        toggleChartBtn.addEventListener('click', () => {
+            const isHidden = chartContainer.style.display === 'none';
+            chartContainer.style.display = isHidden ? 'block' : 'none';
+            toggleChartBtn.textContent = isHidden ? 'Hide Chart' : 'Show Chart';
+            if (isHidden && currentChart) {
+                // Optional: could call currentChart.resize() if container size changes visibility behavior
+            }
+        });
+    } else {
+        console.error("Toggle Chart button not found");
+    }
+
+
+    // --- Data Management ---
+    const exportDataBtn = document.getElementById('exportDataBtn');
+    const importDataInput = document.getElementById('importDataInput');
+
+    function exportData() {
+        const dataToExport = {
+            portfolio: portfolio,
+            expenses: expenses,
+            simulationSettings: {
+                withdrawalRate: withdrawalRateInput.value,
+                simulationYears: simulationYearsInput.value,
+                expectedInflationRate: expectedInflationRateInput.value,
+                enableGuardrail: enableGuardrailCheckbox.checked
+            }
+        };
+
+        const jsonString = JSON.stringify(dataToExport, null, 2); // Pretty print JSON
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'firecalc_data.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showNotification('Data exported successfully!', 'success');
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) {
+            showNotification('No file selected for import.', 'error');
+            return;
+        }
+
+        if (file.type !== "application/json") {
+            showNotification('Invalid file type. Please select a JSON file.', 'error');
+            importDataInput.value = ''; // Reset file input
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const importedData = JSON.parse(e.target.result);
+
+                // Validate top-level keys
+                if (!importedData || typeof importedData !== 'object' ||
+                    !importedData.hasOwnProperty('portfolio') ||
+                    !importedData.hasOwnProperty('expenses') ||
+                    !importedData.hasOwnProperty('simulationSettings')) {
+                    showNotification('Invalid data structure in JSON file.', 'error');
+                    importDataInput.value = ''; // Reset file input
+                    return;
+                }
+
+                // Basic validation for array types (more detailed validation could be added)
+                if (!Array.isArray(importedData.portfolio)) {
+                    showNotification('Invalid portfolio data in JSON file.', 'error');
+                    importDataInput.value = ''; // Reset file input
+                    return;
+                }
+                if (!Array.isArray(importedData.expenses)) {
+                    showNotification('Invalid expenses data in JSON file.', 'error');
+                    importDataInput.value = ''; // Reset file input
+                    return;
+                }
+                if (typeof importedData.simulationSettings !== 'object' || importedData.simulationSettings === null) {
+                    showNotification('Invalid simulation settings in JSON file.', 'error');
+                    importDataInput.value = ''; // Reset file input
+                    return;
+                }
+
+
+                // Apply imported data
+                // Portfolio
+                portfolio = importedData.portfolio.map(asset => ({ // Basic mapping, ensure structure if needed
+                    name: asset.name || 'Unknown Asset',
+                    value: parseFloat(asset.value) || 0,
+                    type: asset.type || 'Other'
+                }));
+                savePortfolio(); // Save to localStorage
+                renderPortfolio(); // Update UI
+
+                // Expenses
+                // Add IDs if missing from imported data (similar to loadExpenses)
+                expenses = importedData.expenses.map(expense => {
+                    let currentExpense = { ...expense };
+                    if (!currentExpense.id) {
+                        currentExpense.id = generateId();
+                    }
+                    if (!currentExpense.subExpenses) {
+                        currentExpense.subExpenses = [];
+                    }
+                     // Ensure amount is a number, default to 0 if not valid
+                    currentExpense.amount = parseFloat(currentExpense.amount) || 0;
+                    return currentExpense;
+                });
+                saveExpenses(); // Save to localStorage
+                renderExpenses(); // Update UI
+
+                // Simulation Settings
+                const { withdrawalRate, simulationYears, expectedInflationRate, enableGuardrail } = importedData.simulationSettings;
+                withdrawalRateInput.value = withdrawalRate || '4';
+                simulationYearsInput.value = simulationYears || '30';
+                expectedInflationRateInput.value = expectedInflationRate || '2';
+                enableGuardrailCheckbox.checked = typeof enableGuardrail === 'boolean' ? enableGuardrail : false;
+
+                showNotification('Data imported successfully!', 'success');
+            } catch (error) {
+                console.error("Error processing imported file:", error);
+                showNotification('Error processing JSON file. Ensure it is valid.', 'error');
+            } finally {
+                importDataInput.value = ''; // Reset file input regardless of outcome
+            }
+        };
+        reader.onerror = () => {
+            showNotification('Error reading file.', 'error');
+            importDataInput.value = ''; // Reset file input
+        };
+        reader.readAsText(file);
+    }
+
+    if (exportDataBtn) {
+        exportDataBtn.addEventListener('click', exportData);
+    } else {
+        console.error("Export Data button not found");
+    }
+
+    if (importDataInput) {
+        importDataInput.addEventListener('change', importData);
+    } else {
+        console.error("Import Data input not found");
+    }
+
 
     // --- Initialization ---
     // Load data from LocalStorage and render initial UI state
