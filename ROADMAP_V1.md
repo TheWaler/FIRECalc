@@ -92,6 +92,11 @@ The primary goals for V1.0 are:
     *   Implement a notification system for actions like successful data export/import or input errors.
     *   Improve the clarity of labels, instructions, and results display.
     *   Integrate an optional chart to visualize the projected savings over time.
+    *   **Status: Implemented**
+    *   **Summary of Changes:**
+        *   The chart now renders both nominal and real (inflation-adjusted) portfolio trajectories so users can directly compare purchasing power against raw balances.
+        *   Chart tooltips present currency values with consistent precision, improving readability when comparing datasets.
+        *   Simulation logic now correctly reads the inflation rate input, ensuring projections and the real-value series stay synchronized with the UI field.
 
 #### UI Changes (index.html)
 
