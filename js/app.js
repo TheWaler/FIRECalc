@@ -543,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const simulationYearsInput = document.getElementById('simulationYears');
     const returnRateInput = document.getElementById('returnRate'); // Added for investment return rate
     const enableGuardrailCheckbox = document.getElementById('enableGuardrail');
-    const expectedInflationRateInput = document.getElementById('expectedInflationRate'); // Added
+    const expectedInflationRateInput = document.getElementById('inflationRate'); // Matches index.html field
     const runSimulationBtn = document.getElementById('runSimulationBtn');
     const simulationResultsDiv = document.getElementById('simulationResults');
     const toggleChartBtn = document.getElementById('toggleChartBtn'); // Chart button
@@ -775,13 +775,19 @@ document.addEventListener('DOMContentLoaded', () => {
             // The chart will show portfolio value over time.
             // Year 0 is initial portfolio value. Subsequent years are endValue from simulationData.
             const chartLabels = ['Year 0'];
-            const chartDataPoints = [inputs.initialPortfolioValue];
+            const chartDataPointsNominal = [inputs.initialPortfolioValue];
+            const chartDataPointsReal = [inputs.initialPortfolioValue];
+
+            const inflationRateDecimal = inputs.expectedInflationRate / 100;
             simulationResults.simulationData.forEach(data => {
                 chartLabels.push(`Year ${data.year}`);
-                chartDataPoints.push(data.endValue);
+                chartDataPointsNominal.push(data.endValue);
+
+                const realEndValue = data.endValue / Math.pow(1 + inflationRateDecimal, data.year);
+                chartDataPointsReal.push(realEndValue);
             });
 
-            updateChart(chartLabels, chartDataPoints, inputs);
+            updateChart(chartLabels, chartDataPointsNominal, chartDataPointsReal, inputs);
             toggleChartBtn.style.display = 'inline-block';
             // Ensure chart is hidden by default when new simulation is run, button text to "Show"
             chartContainer.style.display = 'none';
@@ -800,7 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {Array<number>} dataPoints - Array of data points for the Y-axis (portfolio values).
      * @param {object} inputs - The simulation input parameters for context in chart title or labels.
      */
-    function updateChart(labels, dataPoints, inputs) {
+    function updateChart(labels, nominalDataPoints, realDataPoints, inputs) {
         if (currentChart) {
             currentChart.destroy(); // Destroy existing chart instance before creating a new one
         }
@@ -810,14 +816,26 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'line',
             data: {
                 labels: labels,
-                datasets: [{
-            label: `Portfolio Value (Nominal, Investment Return: ${inputs.nominalReturnRate}%, Inflation: ${inputs.expectedInflationRate}%)`,
-                    data: dataPoints,
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    tension: 0.1,
-                    fill: true
-                }]
+                datasets: [
+                    {
+                        label: `Portfolio Value (Nominal, Investment Return: ${inputs.nominalReturnRate}%)`,
+                        data: nominalDataPoints,
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.1,
+                        borderWidth: 2,
+                        fill: false
+                    },
+                    {
+                        label: `Portfolio Value (Real, Inflation Adjusted at ${inputs.expectedInflationRate}%)`,
+                        data: realDataPoints,
+                        borderColor: 'rgb(255, 159, 64)',
+                        backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                        tension: 0.1,
+                        borderWidth: 2,
+                        fill: false
+                    }
+                ]
             },
             options: {
                 responsive: true,
@@ -851,7 +869,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     label += ': ';
                                 }
                                 if (context.parsed.y !== null) {
-                                    label += '$' + context.parsed.y.toLocaleString();
+                                    label += '$' + context.parsed.y.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                                 }
                                 return label;
                             }
