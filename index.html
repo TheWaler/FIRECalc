@@ -7,138 +7,142 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <a class="skip-link" href="#mainContent">Skip to main content</a>
     <header>
         <h1>FIRECalc</h1>
     </header>
 
-    <div id="userNotification" class="notification" style="display:none;"></div>
+    <main id="mainContent">
+        <div id="userNotification" class="notification" role="status" aria-live="polite" aria-atomic="true" tabindex="-1"></div>
 
-    <div class="quick-guide">
-        <p><strong>Quick Guide:</strong> Welcome to FIRECalc! 1. Add your assets in "Portfolio Tracking". 2. Log your recurring costs in "Expense Input". 3. Use "Withdrawal Simulation" to project how long your savings might last. Keep data updated for best results.</p>
-        <p class="simulation-disclaimer"><em>Note: Simulations are projections and may not account for all market returns or taxes. Inflation adjustment is available in the simulation section. Use for informational purposes.</em></p>
-    </div>
-
-    <section id="dataManagement">
-        <h2><img src="assets/icons/data-icon.svg" alt="Data Icon" class="section-icon"> Data Management</h2>
-        <p class="section-info">Export your current financial data (portfolio and expenses) to a JSON file for backup or use on another device. Import previously saved data to quickly repopulate the application.</p>
-        <button id="exportDataBtn">Export Data</button>
-        <label for="importDataInput" class="button-style-label">Import Data</label>
-        <input type="file" id="importDataInput" accept=".json" style="display: none;">
-    </section>
-
-    <section id="portfolio">
-        <h2><img src="assets/icons/portfolio-icon.svg" alt="Portfolio Icon" class="section-icon"> Portfolio Tracking</h2>
-        <p class="section-info">Track your assets like stocks, crypto, and real estate. Enter each asset's name, current value, and type. Your total portfolio value will be calculated automatically. Use the Edit/Delete buttons to manage individual assets.</p>
-        <div class="form-group">
-            <label for="assetName">Asset Name:</label>
-            <input type="text" id="assetName">
-        </div>
-        <div class="form-group">
-            <label for="assetValue">Asset Value:</label>
-            <input type="number" id="assetValue">
-        </div>
-        <div class="form-group">
-            <label for="assetType">Asset Type:</label>
-            <select id="assetType">
-                <option value="Stocks">Stocks</option>
-                <option value="Crypto">Crypto</option>
-                <option value="Real Estate">Real Estate</option>
-                <option value="Cash">Cash</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-        <button id="addAssetBtn">Add Asset</button>
-        <ul id="portfolioList"></ul>
-        <p>Total Portfolio Value: <span id="totalPortfolioValue">$0</span></p>
-    </section>
-
-    <section id="expenses">
-        <h2><img src="assets/icons/expense-icon.svg" alt="Expense Icon" class="section-icon"> Expense Input</h2>
-        <p class="section-info">Log your regular expenses. Enter the expense name, amount, frequency (daily, weekly, monthly, yearly), and category. Your total annual expenses will be calculated to help with financial planning. Use the Edit/Delete buttons to manage individual expenses.</p>
-        <div class="form-group">
-            <label for="expenseName">Expense Name:</label>
-            <input type="text" id="expenseName">
-        </div>
-        <div class="form-group">
-            <label for="expenseAmount">Expense Amount:</label>
-            <input type="number" id="expenseAmount">
-        </div>
-        <div class="form-group">
-            <label for="expenseFrequency">Frequency:</label>
-            <select id="expenseFrequency">
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="yearly">Yearly</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="expenseCategory">Category:</label>
-            <select id="expenseCategory">
-                <option value="Housing">Housing</option>
-                <option value="Food">Food</option>
-                <option value="Transport">Transport</option>
-                <option value="Entertainment">Entertainment</option>
-                <option value="Healthcare">Healthcare</option>
-                <option value="Utilities">Utilities</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-        <button id="addExpenseBtn">Add Expense</button>
-        <ul id="expenseList"></ul>
-        <p>Total Annual Expenses: <span id="totalAnnualExpenses">$0</span></p>
-    </section>
-
-    <section id="simulation">
-        <h2><img src="assets/icons/simulation-icon.svg" alt="Simulation Icon" class="section-icon"> Withdrawal Simulation</h2>
-        <p class="section-info">Simulate how long your portfolio might last based on different withdrawal strategies. Input your desired withdrawal rate and simulation period. Experiment with different rates and the simple guardrail strategy (which reduces withdrawals by 10% if the portfolio drops below 50% of its initial value) to see their impact.</p>
-
-        <div class="form-group">
-            <label for="current-age">Current Age:</label>
-            <input type="number" id="current-age" value="30">
-        </div>
-        <div class="form-group">
-            <label for="retirement-age">Expected Retirement Age:</label>
-            <input type="number" id="retirement-age" value="65">
-        </div>
-        <div class="form-group">
-            <label for="monthly-contribution">Monthly Contribution ($):</label>
-            <input type="number" id="monthly-contribution" value="500">
+        <div class="quick-guide">
+            <p><strong>Quick Guide:</strong> Welcome to FIRECalc! 1. Add your assets in "Portfolio Tracking". 2. Log your recurring costs in "Expense Input". 3. Use "Withdrawal Simulation" to project how long your savings might last. Keep data updated for best results.</p>
+            <p class="simulation-disclaimer"><em>Note: Simulations are projections and may not account for all market returns or taxes. Inflation adjustment is available in the simulation section. Use for informational purposes.</em></p>
         </div>
 
-        <div class="form-group">
-            <label for="withdrawalRate">Withdrawal Rate (%):</label>
-            <input type="number" id="withdrawalRate" value="4">
-        </div>
-        <div class="form-group">
-            <label for="simulationYears">Simulation Years:</label>
-            <input type="number" id="simulationYears" value="30">
-        </div>
-        <div class="form-group">
-            <label for="returnRate">Expected Investment Rate of Return (%):</label>
-            <input type="number" id="returnRate" value="7" step="0.1" required><br><br>
-        </div>
-        <div class="form-group">
-            <label for="inflationRate">Expected Annual Inflation Rate (%):</label>
-            <input type="number" id="inflationRate" value="2" step="0.1" required><br><br>
-        </div>
-        <div class="form-group">
-            <label for="enableGuardrail">Enable Simple Guardrail:</label>
-            <input type="checkbox" id="enableGuardrail">
-        </div>
-        <button id="runSimulationBtn">Run Simulation</button>
-        <button id="export-button">Export Sim Inputs</button> <!-- Changed text -->
-        <label for="import-simulation-input" class="button-style-label">Import Sim Inputs</label>
-        <input type="file" id="import-simulation-input" accept=".json" style="display: none;">
-        <div id="simulationResults">
-            <div id="projectedSavingsNominal"></div>
-            <div id="projectedSavingsReal"></div>
-        </div>
-        <button id="toggleChartBtn" style="display: none; margin-top: 15px;">Show Chart</button>
-        <div id="chartContainer" style="display: none; margin-top: 10px;">
-            <canvas id="simulationChart"></canvas>
-        </div>
-    </section>
+        <section id="dataManagement">
+            <h2><img src="assets/icons/data-icon.svg" alt="Data Icon" class="section-icon"> Data Management</h2>
+            <p class="section-info">Export your current financial data (portfolio and expenses) to a JSON file for backup or use on another device. Import previously saved data to quickly repopulate the application.</p>
+            <button id="exportDataBtn">Export Data</button>
+            <label for="importDataInput" class="button-style-label">Import Data</label>
+            <input type="file" id="importDataInput" accept=".json" style="display: none;">
+        </section>
+
+        <section id="portfolio">
+            <h2><img src="assets/icons/portfolio-icon.svg" alt="Portfolio Icon" class="section-icon"> Portfolio Tracking</h2>
+            <p class="section-info">Track your assets like stocks, crypto, and real estate. Enter each asset's name, current value, and type. Your total portfolio value will be calculated automatically. Use the Edit/Delete buttons to manage individual assets.</p>
+            <div class="form-group">
+                <label for="assetName">Asset Name:</label>
+                <input type="text" id="assetName">
+            </div>
+            <div class="form-group">
+                <label for="assetValue">Asset Value:</label>
+                <input type="number" id="assetValue">
+            </div>
+            <div class="form-group">
+                <label for="assetType">Asset Type:</label>
+                <select id="assetType">
+                    <option value="Stocks">Stocks</option>
+                    <option value="Crypto">Crypto</option>
+                    <option value="Real Estate">Real Estate</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <button id="addAssetBtn">Add Asset</button>
+            <ul id="portfolioList"></ul>
+            <p>Total Portfolio Value: <span id="totalPortfolioValue">$0</span></p>
+        </section>
+
+        <section id="expenses">
+            <h2><img src="assets/icons/expense-icon.svg" alt="Expense Icon" class="section-icon"> Expense Input</h2>
+            <p class="section-info">Log your regular expenses. Enter the expense name, amount, frequency (daily, weekly, monthly, yearly), and category. Your total annual expenses will be calculated to help with financial planning. Use the Edit/Delete buttons to manage individual expenses.</p>
+            <div class="form-group">
+                <label for="expenseName">Expense Name:</label>
+                <input type="text" id="expenseName">
+            </div>
+            <div class="form-group">
+                <label for="expenseAmount">Expense Amount:</label>
+                <input type="number" id="expenseAmount">
+            </div>
+            <div class="form-group">
+                <label for="expenseFrequency">Frequency:</label>
+                <select id="expenseFrequency">
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="expenseCategory">Category:</label>
+                <select id="expenseCategory">
+                    <option value="Housing">Housing</option>
+                    <option value="Food">Food</option>
+                    <option value="Transport">Transport</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <button id="addExpenseBtn">Add Expense</button>
+            <ul id="expenseList"></ul>
+            <p>Total Annual Expenses: <span id="totalAnnualExpenses">$0</span></p>
+        </section>
+
+        <section id="simulation">
+            <h2><img src="assets/icons/simulation-icon.svg" alt="Simulation Icon" class="section-icon"> Withdrawal Simulation</h2>
+            <p class="section-info">Simulate how long your portfolio might last based on different withdrawal strategies. Input your desired withdrawal rate and simulation period. Experiment with different rates and the simple guardrail strategy (which reduces withdrawals by 10% if the portfolio drops below 50% of its initial value) to see their impact.</p>
+
+            <div class="form-group">
+                <label for="current-age">Current Age:</label>
+                <input type="number" id="current-age" value="30">
+            </div>
+            <div class="form-group">
+                <label for="retirement-age">Expected Retirement Age:</label>
+                <input type="number" id="retirement-age" value="65">
+            </div>
+            <div class="form-group">
+                <label for="monthly-contribution">Monthly Contribution ($):</label>
+                <input type="number" id="monthly-contribution" value="500">
+            </div>
+
+            <div class="form-group">
+                <label for="withdrawalRate">Withdrawal Rate (%):</label>
+                <input type="number" id="withdrawalRate" value="4">
+            </div>
+            <div class="form-group">
+                <label for="simulationYears">Simulation Years:</label>
+                <input type="number" id="simulationYears" value="30">
+            </div>
+            <div class="form-group">
+                <label for="returnRate">Expected Investment Rate of Return (%):</label>
+                <input type="number" id="returnRate" value="7" step="0.1" required><br><br>
+            </div>
+            <div class="form-group">
+                <label for="inflationRate">Expected Annual Inflation Rate (%):</label>
+                <input type="number" id="inflationRate" value="2" step="0.1" required><br><br>
+            </div>
+            <div class="form-group">
+                <label for="enableGuardrail">Enable Simple Guardrail:</label>
+                <input type="checkbox" id="enableGuardrail">
+            </div>
+            <button id="runSimulationBtn">Run Simulation</button>
+            <button id="export-button">Export Sim Inputs</button> <!-- Changed text -->
+            <label for="import-simulation-input" class="button-style-label">Import Sim Inputs</label>
+            <input type="file" id="import-simulation-input" accept=".json" style="display: none;">
+            <div id="simulationResults">
+                <div id="projectedSavingsNominal" role="status" aria-live="polite"></div>
+                <div id="projectedSavingsReal" role="status" aria-live="polite"></div>
+            </div>
+            <button id="toggleChartBtn" aria-expanded="false" aria-controls="chartContainer">Show Chart</button>
+            <div id="chartContainer" role="region" aria-live="polite" aria-label="Simulation results chart" hidden>
+                <canvas id="simulationChart"></canvas>
+            </div>
+        </section>
+
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/app.js"></script>

@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         notificationTimeout = setTimeout(() => {
             userNotificationDiv.classList.remove('show');
+            userNotificationDiv.textContent = '';
         }, 3000); // Notification visible for 3 seconds
     }
 
@@ -665,7 +666,6 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function displaySimulationResults(results, simulationYears, inputs) {
         // Clear previous results, but preserve the dedicated divs for nominal/real projections
-        const tableContainer = simulationResultsDiv.querySelector('table') ? simulationResultsDiv.querySelector('table').parentNode : simulationResultsDiv;
         if (simulationResultsDiv.querySelector('table')) {
             simulationResultsDiv.querySelector('table').remove();
         }
@@ -676,6 +676,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const resultsTitle = document.createElement('h3');
         resultsTitle.textContent = 'Simulation Results';
+        resultsTitle.classList.add('results-title');
+        resultsTitle.id = 'simulation-results-title';
         simulationResultsDiv.appendChild(resultsTitle);
 
         if (inputs && typeof inputs.expectedInflationRate !== 'undefined') {
@@ -683,6 +685,8 @@ document.addEventListener('DOMContentLoaded', () => {
             inflationNote.textContent = `Withdrawal amounts are adjusted for an annual inflation rate of ${inputs.expectedInflationRate}%.`;
             inflationNote.style.fontStyle = 'italic';
             inflationNote.style.marginBottom = '10px';
+            inflationNote.classList.add('inflation-note');
+            inflationNote.id = 'simulation-inflation-note';
             simulationResultsDiv.appendChild(inflationNote);
         }
 
@@ -706,12 +710,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
         const table = document.createElement('table');
+        table.setAttribute('aria-labelledby', 'simulation-results-title');
+        if (inputs && typeof inputs.expectedInflationRate !== 'undefined') {
+            table.setAttribute('aria-describedby', 'simulation-inflation-note');
+        } else {
+            table.removeAttribute('aria-describedby');
+        }
+        const caption = table.createCaption();
+        caption.textContent = 'Year-by-year withdrawal results';
         const thead = document.createElement('thead');
         const tbody = document.createElement('tbody');
         const headerRow = document.createElement('tr');
         ['Year', 'Start Value', 'Withdrawal Amount', 'End Value'].forEach(text => {
             const th = document.createElement('th');
             th.textContent = text;
+            th.scope = 'col';
             headerRow.appendChild(th);
         });
         thead.appendChild(headerRow);
@@ -742,6 +755,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const messageElement = document.createElement('p');
         messageElement.style.fontWeight = 'bold';
         messageElement.classList.add('simulation-message'); // Add class for easier removal
+        messageElement.setAttribute('role', 'status');
+        messageElement.setAttribute('aria-live', 'polite');
 
         if (results.depletedYear !== -1) {
             messageElement.style.color = 'red';
@@ -790,8 +805,11 @@ document.addEventListener('DOMContentLoaded', () => {
             updateChart(chartLabels, chartDataPointsNominal, chartDataPointsReal, inputs);
             toggleChartBtn.style.display = 'inline-block';
             // Ensure chart is hidden by default when new simulation is run, button text to "Show"
-            chartContainer.style.display = 'none';
+            if (chartContainer) {
+                chartContainer.setAttribute('hidden', '');
+            }
             toggleChartBtn.textContent = 'Show Chart';
+            toggleChartBtn.setAttribute('aria-expanded', 'false');
 
 
             showNotification('Simulation complete.', 'success');
@@ -882,9 +900,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (toggleChartBtn) {
         toggleChartBtn.addEventListener('click', () => {
-            const isHidden = chartContainer.style.display === 'none';
-            chartContainer.style.display = isHidden ? 'block' : 'none';
+            if (!chartContainer) {
+                return;
+            }
+
+            const isHidden = chartContainer.hasAttribute('hidden');
+            if (isHidden) {
+                chartContainer.removeAttribute('hidden');
+            } else {
+                chartContainer.setAttribute('hidden', '');
+            }
+
             toggleChartBtn.textContent = isHidden ? 'Hide Chart' : 'Show Chart';
+            toggleChartBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+
             if (isHidden && currentChart) {
                 // Optional: could call currentChart.resize() if container size changes visibility behavior
             }

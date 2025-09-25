@@ -18,6 +18,29 @@ body {
     /* margin and padding are 0 from reset */
 }
 
+.skip-link {
+    position: absolute;
+    left: -999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.skip-link:focus {
+    left: 50%;
+    top: 10px;
+    width: auto;
+    height: auto;
+    padding: 10px 15px;
+    background-color: #FFD700;
+    color: #333;
+    text-decoration: none;
+    transform: translateX(-50%);
+    border-radius: 4px;
+    z-index: 1001;
+}
+
 img, picture, video, canvas, svg {
     display: block;
     max-width: 100%;
@@ -109,12 +132,18 @@ section h2 {
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.form-group input[type="text"]:focus,
-.form-group input[type="number"]:focus,
-.form-group select:focus {
+.form-group input[type="text"]:focus-visible,
+.form-group input[type="number"]:focus-visible,
+.form-group select:focus-visible {
     border-color: #FFD700;
     outline: none;
     box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+}
+
+button:focus-visible,
+.button-style-label:focus-visible {
+    outline: 3px solid #FFD700;
+    outline-offset: 2px;
 }
 
 /* ==========================================================================
@@ -246,27 +275,22 @@ section > p {
     position: fixed; /* Or 'sticky' if preferred within a container */
     top: 20px;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) translateY(-30px);
     padding: 15px 25px;
     border-radius: 5px;
     color: white;
     font-size: 1em;
     z-index: 1000;
     opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.5s ease, visibility 0.5s ease, transform 0.5s ease;
+    pointer-events: none;
+    transition: opacity 0.5s ease, transform 0.5s ease;
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 .notification.show {
     opacity: 1;
-    visibility: visible;
+    pointer-events: auto;
     transform: translateX(-50%) translateY(0); /* Final position */
-}
-
-/* Initial position for slide-in effect */
-.notification:not(.show) {
-    transform: translateX(-50%) translateY(-30px);
 }
 
 
@@ -307,6 +331,19 @@ section > p {
 
 #simulationResults tbody tr:hover {
     background-color: #f1f1f1;
+}
+
+#toggleChartBtn {
+    display: none;
+    margin-top: 15px;
+}
+
+#chartContainer {
+    margin-top: 10px;
+}
+
+#chartContainer[hidden] {
+    display: none !important;
 }
 
 /* ==========================================================================
@@ -501,5 +538,17 @@ section > p {
         padding: 10px 15px;
         font-size: 0.9em;
         width: 90%; /* Make notification wider on small screens */
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .notification,
+    button,
+    .button-style-label,
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group select {
+        transition: none !important;
+        box-shadow: none !important;
     }
 }
