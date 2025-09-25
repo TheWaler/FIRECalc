@@ -9,13 +9,30 @@
     box-sizing: border-box;
 }
 
+:root {
+    --color-primary: #008080;
+    --color-primary-dark: #006666;
+    --color-accent: #ffd700;
+    --color-surface: #ffffff;
+    --color-muted: #f4f6f8;
+    --color-text: #1f2d3d;
+    --color-text-subtle: #5b6b7a;
+    --shadow-soft: 0 20px 40px rgba(15, 44, 64, 0.12);
+    --shadow-hover: 0 24px 45px rgba(15, 44, 64, 0.18);
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 8px;
+}
+
 /* Sensible defaults after reset */
 body {
     line-height: 1.6;
-    font-family: sans-serif;
-    background-color: #F0F0F0; /* Secondary color */
-    color: #333;
-    /* margin and padding are 0 from reset */
+    font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(160deg, #ecf4f6 0%, #f8fbfd 30%, #eef7f4 100%);
+    color: var(--color-text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
 .skip-link {
@@ -57,116 +74,168 @@ input, button, textarea, select {
    Header Styling
    ========================================================================== */
 header {
-    background-color: #008080; /* Primary color */
-    color: white; /* For better contrast on primary color */
-    padding: 1em 0;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0))
+                , linear-gradient(135deg, var(--color-primary) 0%, #0f7f93 100%);
+    color: #ffffff;
+    padding: 4.5rem 1.5rem 6rem;
     text-align: center;
 }
 
-/* header h1 already has margin:0 from reset */
+header::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0, 50, 60, 0.05) 0%, rgba(0, 50, 60, 0.35) 100%);
+    pointer-events: none;
+}
 
-h1 { /* This will style the main header "FIRECalc" */
-    color: #008080; /* Primary color */
-    text-align: center;
-    padding: 1em 0;
-    /* font-size will be default or inherited, can adjust if needed */
+.header-content {
+    position: relative;
+    max-width: 780px;
+    margin: 0 auto;
+    z-index: 1;
+}
+
+header h1 {
+    font-size: clamp(2.5rem, 4vw, 3.5rem);
+    letter-spacing: 0.02em;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+}
+
+.hero-subtitle {
+    font-size: clamp(1.1rem, 2vw, 1.35rem);
+    color: rgba(255, 255, 255, 0.86);
+    max-width: 680px;
+    margin: 0 auto;
 }
 
 
 /* ==========================================================================
-   General Section Layout
+   General Layout and Card Styling
    ========================================================================== */
-section {
-    border: 1px solid #ccc;
-    padding: 1em;
-    margin: 1em; /* This margin is important to keep for sections */
-    background-color: white;
+main {
+    position: relative;
+    max-width: 1180px;
+    margin: -4.5rem auto 4rem;
+    padding: 0 1.5rem 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
 }
 
-/* section h2 already has margin-top:0 from reset */
-section h2 {
-    color: #008080; /* Primary color */
-    margin-bottom: 0.5em; /* Added margin for spacing after h2 due to reset */
+.card {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem clamp(1.5rem, 3vw, 2.25rem);
+    box-shadow: var(--shadow-soft);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.card:hover,
+.card:focus-within {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.75rem;
+}
+
+.card--wide {
+    grid-column: 1 / -1;
+}
+
+.card h2 {
+    color: var(--color-primary);
+    font-size: 1.35rem;
+    margin-bottom: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
 }
 
 .section-icon {
-    width: 24px;
-    height: 24px;
-    vertical-align: middle;
-    margin-right: 8px;
-}
-
-#portfolio h2,
-#expenses h2,
-#simulation h2 {
-    /* Primary color already applied via section h2 */
-    display: flex; /* Align icon and text nicely */
-    align-items: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
 }
 
 /* ==========================================================================
    Form Styling
    ========================================================================== */
 .form-group {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(160px, 210px) 1fr;
+    gap: 0.5rem 1.25rem;
     align-items: center;
-    margin-bottom: 0.75em;
+    margin-bottom: 1.1rem;
 }
 
 .form-group label {
-    flex-basis: 150px;
-    margin-right: 10px; /* Keep margin for spacing */
-    font-weight: bold;
-    font-size: 0.9em;
-    color: #555;
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--color-text-subtle);
 }
 
 .form-group input[type="text"],
 .form-group input[type="number"],
 .form-group select {
-    flex-grow: 1;
-    padding: 8px; /* Padding restored after reset */
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    /* font-size: 1em; Inherited via font:inherit */
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid rgba(31, 45, 61, 0.12);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-muted);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
 }
 
 .form-group input[type="text"]:focus-visible,
 .form-group input[type="number"]:focus-visible,
 .form-group select:focus-visible {
-    border-color: #FFD700;
+    border-color: var(--color-primary);
     outline: none;
-    box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
-}
-
-button:focus-visible,
-.button-style-label:focus-visible {
-    outline: 3px solid #FFD700;
-    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(0, 128, 128, 0.12);
+    background-color: #ffffff;
 }
 
 /* ==========================================================================
    Button Styling
    ========================================================================== */
 button, .button-style-label { /* General button style, now also for labels styled as buttons */
-    background-color: #008080;
-    color: white;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    color: #ffffff;
     border: none; /* Important to keep after reset */
-    padding: 10px 15px; /* Padding restored */
-    border-radius: 4px;
+    padding: 0.75rem 1.4rem;
+    border-radius: var(--radius-md);
     cursor: pointer;
-    /* font-size: 1em; Inherited */
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-    margin-top: 10px; /* Increased margin-top for spacing after reset */
-    margin-bottom: 5px; /* Added margin for spacing */
-    display: inline-block; /* Important for labels to behave like buttons */
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    margin-top: 0.6rem;
+    margin-bottom: 0.25rem;
+    display: inline-flex; /* Important for labels to behave like buttons */
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
     text-align: center; /* Ensure text is centered if label is wider */
+    box-shadow: 0 12px 22px rgba(0, 128, 128, 0.22);
 }
 
-button:hover, .button-style-label:hover {
-    background-color: #006666;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+button:hover, .button-style-label:hover,
+button:focus-visible, .button-style-label:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 26px rgba(0, 128, 128, 0.28);
+}
+
+button:focus-visible, .button-style-label:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 4px;
 }
 
 /* Specific styling for the file input to make the label clickable like a button */
@@ -189,10 +258,8 @@ input[type="file"][style*="display: none"] {
 
 /* Buttons inside forms (Add/Update/Run) */
 #addAssetBtn, #addExpenseBtn, #runSimulationBtn {
-    display: block;
-    margin-left: auto;
+    margin-left: 0;
     margin-right: auto;
-    /* margin-top is from general button, can add more if needed */
 }
 
 /* List item buttons (Edit/Delete) */
@@ -223,14 +290,15 @@ ul { /* General UL styling */
 }
 
 ul li { /* General LI styling for portfolio items primarily */
-    background-color: #fff;
-    border: 1px solid #eee;
-    padding: 10px;
-    margin-bottom: 8px;
-    border-radius: 4px;
+    background-color: var(--color-muted);
+    border: 1px solid rgba(31, 45, 61, 0.08);
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.65rem;
+    border-radius: var(--radius-sm);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 0.75rem;
 }
 
 /* Specific styling for #expenseList and its children */
@@ -255,16 +323,18 @@ ul li { /* General LI styling for portfolio items primarily */
 }
 #expenseList ul li {
     /* Sub-items might need slightly different padding or borders if desired, e.g., less padding */
-    padding: 8px;
-    border-left: 3px solid #008080; /* Indicate nesting */
+    padding: 0.75rem;
+    border-left: 3px solid rgba(0, 128, 128, 0.45); /* Indicate nesting */
+    background-color: #ffffff;
 }
 
 
 /* Total value paragraphs (e.g., "Total Portfolio Value: $X") */
-section > p {
-    margin-top: 1em;
-    font-weight: bold;
-    color: #008080; /* Primary color */
+.card > p {
+    margin-top: 1.25rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    font-size: 1rem;
 }
 
 
@@ -350,39 +420,43 @@ section > p {
    Informational Text Styling (Quick Guide, Section Info)
    ========================================================================== */
 .quick-guide {
-    background-color: #e6f7ff;
-    border-left: 5px solid #008080;
-    padding: 15px; /* Padding restored */
-    margin: 20px 1em; /* Margin restored */
-    border-radius: 0 5px 5px 0;
+    background: linear-gradient(135deg, rgba(0, 128, 128, 0.08) 0%, rgba(0, 128, 128, 0.14) 100%);
+    border: 1px solid rgba(0, 128, 128, 0.12);
+    box-shadow: none;
+    padding: 1.9rem clamp(1.5rem, 3vw, 2.3rem);
+    display: grid;
+    gap: 0.85rem;
+}
+
+.quick-guide h2 {
+    font-size: clamp(1.5rem, 3vw, 1.85rem);
+    color: var(--color-primary);
 }
 
 .quick-guide p {
-    margin-bottom: 0.5em; /* Ensure spacing between paragraphs in quick-guide */
-    /* line-height: 1.5; from body */
-    color: #333;
+    margin: 0;
+    color: rgba(31, 45, 61, 0.85);
+    font-size: 1.02rem;
 }
-.quick-guide p:last-child {
-    margin-bottom: 0;
-}
-
 
 .quick-guide strong {
-    color: #008080;
+    color: var(--color-primary);
+    font-weight: 700;
 }
 
 .simulation-disclaimer {
     font-style: italic;
-    font-size: 0.9em;
-    color: #555;
-    margin-top: 10px; /* Margin restored */
+    font-size: 0.95rem;
+    color: var(--color-text-subtle);
+    margin-top: 0.35rem;
+    line-height: 1.6;
 }
 
 .section-info {
-    font-size: 0.9em;
-    color: #555;
-    margin-bottom: 15px; /* Margin restored */
-    /* line-height: 1.5; from body */
+    font-size: 0.96rem;
+    color: var(--color-text-subtle);
+    margin-bottom: 1.1rem;
+    line-height: 1.7;
 }
 
 /* ==========================================================================
@@ -414,39 +488,27 @@ section > p {
 
 /* Tablet-like screens */
 @media (max-width: 768px) {
+    main {
+        margin: -3.5rem auto 3rem;
+        padding: 0 1rem 3rem;
+    }
+
+    .content-grid {
+        gap: 1.25rem;
+    }
+
     .form-group {
-        flex-direction: column;
-        align-items: stretch; /* Make inputs full width */
+        grid-template-columns: 1fr;
+        gap: 0.35rem 0;
     }
 
     .form-group label {
-        flex-basis: auto; /* Reset basis */
-        width: 100%;     /* Full width */
-        margin-right: 0;
-        margin-bottom: 5px; /* Space between label and input */
-    }
-
-    .form-group input[type="text"],
-    .form-group input[type="number"],
-    .form-group select {
-        width: 100%; /* Ensure they take full width */
+        margin-bottom: 0.2rem;
     }
 
     #addAssetBtn, #addExpenseBtn, #runSimulationBtn {
         width: 100%;
-        max-width: 350px; /* Prevent them from being overly wide */
-        /* margin-left: 0; Already auto from previous rule, should still center */
-        /* margin-right: 0; */
-    }
-
-    section {
-        margin: 0.75em;
-        padding: 0.75em;
-    }
-
-    .quick-guide {
-        margin: 10px 0.75em;
-        padding: 10px;
+        max-width: none;
     }
 
     /* Make table scrollable if it's too wide */
@@ -461,16 +523,16 @@ section > p {
         font-size: 0.95em; /* Slightly reduce base font for smaller screens */
     }
 
+    header {
+        padding: 3.5rem 1rem 4.5rem;
+    }
+
     header h1 {
-        font-size: 1.8em; /* Reduce header font size */
+        font-size: 2.2rem; /* Reduce header font size */
     }
 
-    h1 { /* Main page title if it exists outside header */
-        font-size: 1.5em;
-    }
-
-    section h2 {
-        font-size: 1.3em;
+    .card h2 {
+        font-size: 1.25rem;
     }
 
     button { /* General buttons */
@@ -488,7 +550,7 @@ section > p {
     }
 
     ul li {
-        padding: 8px;
+        padding: 0.75rem;
         flex-direction: column; /* Stack text and buttons */
         align-items: flex-start; /* Align items to the start */
     }
@@ -503,14 +565,6 @@ section > p {
     #expenseList li button {
         margin-left: 0; /* Remove left margin if stacked */
         margin-top: 5px; /* Add top margin if stacked */
-    }
-    /* Ensure portfolio list buttons also stack if its LIs become column-oriented */
-    #portfolioList li {
-        /* If portfolio LIs also stack on mobile, this would be similar to #expenseList li */
-    }
-    #portfolioList li button {
-        /* margin-left: 0; */ /* If stacked */
-        /* margin-top: 5px; */ /* If stacked */
     }
 
 
