@@ -10,12 +10,32 @@
 }
 
 /* Sensible defaults after reset */
+:root {
+    --color-background: #f3f6fb;
+    --color-surface: #ffffff;
+    --color-surface-muted: rgba(255, 255, 255, 0.65);
+    --color-primary: #0f766e;
+    --color-primary-strong: #0a524e;
+    --color-accent: #fbbf24;
+    --color-text: #1f2933;
+    --color-text-muted: #5f6c80;
+    --shadow-soft: 0 20px 45px -20px rgba(15, 118, 110, 0.45);
+    --radius-large: 24px;
+    --radius-medium: 16px;
+    --radius-small: 12px;
+    --transition-snappy: cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
 body {
     line-height: 1.6;
-    font-family: sans-serif;
-    background-color: #F0F0F0; /* Secondary color */
-    color: #333;
-    /* margin and padding are 0 from reset */
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: radial-gradient(circle at 5% 10%, rgba(15, 118, 110, 0.08), transparent 45%),
+                radial-gradient(circle at 90% 20%, rgba(251, 191, 36, 0.12), transparent 50%),
+                var(--color-background);
+    min-height: 100vh;
+    color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
 }
 
 .skip-link {
@@ -56,37 +76,126 @@ input, button, textarea, select {
 /* ==========================================================================
    Header Styling
    ========================================================================== */
-header {
-    background-color: #008080; /* Primary color */
-    color: white; /* For better contrast on primary color */
-    padding: 1em 0;
+.app-header {
+    position: relative;
+    padding: 3.5rem 1.5rem 4.5rem;
     text-align: center;
+    color: var(--color-surface);
+    overflow: hidden;
+    background: linear-gradient(120deg, rgba(15, 118, 110, 0.95), rgba(15, 118, 110, 0.7)),
+                linear-gradient(200deg, rgba(15, 118, 110, 0.9), rgba(15, 118, 110, 0.5));
+    box-shadow: 0 32px 60px -32px rgba(15, 118, 110, 0.75);
 }
 
-/* header h1 already has margin:0 from reset */
+.app-header::before,
+.app-header::after {
+    content: "";
+    position: absolute;
+    inset: auto;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(251, 191, 36, 0.45), transparent 65%);
+    filter: blur(0px);
+    opacity: 0.75;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+}
 
-h1 { /* This will style the main header "FIRECalc" */
-    color: #008080; /* Primary color */
-    text-align: center;
-    padding: 1em 0;
-    /* font-size will be default or inherited, can adjust if needed */
+.app-header::before {
+    top: 15%;
+    left: 20%;
+}
+
+.app-header::after {
+    bottom: -30px;
+    right: -30px;
+    width: 260px;
+    height: 260px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.28), transparent 70%);
+}
+
+.header-inner {
+    position: relative;
+    max-width: 960px;
+    margin: 0 auto;
+    z-index: 1;
+}
+
+.app-header h1 {
+    font-size: clamp(2.25rem, 5vw, 3.25rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+}
+
+.tagline {
+    margin-top: 0.75rem;
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 500;
 }
 
 
 /* ==========================================================================
    General Section Layout
    ========================================================================== */
-section {
-    border: 1px solid #ccc;
-    padding: 1em;
-    margin: 1em; /* This margin is important to keep for sections */
-    background-color: white;
+main {
+    padding: 0 0 4rem;
 }
 
-/* section h2 already has margin-top:0 from reset */
+.app-shell {
+    max-width: 1100px;
+    margin: -3rem auto 4rem;
+    padding: 0 1.5rem 3rem;
+}
+
+.layout-grid {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+section {
+    border: 1px solid rgba(15, 118, 110, 0.08);
+    padding: 2rem;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-large);
+    box-shadow: var(--shadow-soft);
+    position: relative;
+    overflow: hidden;
+    transition: transform 220ms var(--transition-snappy), box-shadow 220ms var(--transition-snappy);
+    animation: float-in 650ms var(--transition-snappy) backwards;
+}
+
+section::after {
+    content: "";
+    position: absolute;
+    inset: auto auto 0 0;
+    width: 60%;
+    height: 12px;
+    background: linear-gradient(90deg, rgba(15, 118, 110, 0.16), rgba(251, 191, 36, 0.25));
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+section:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 28px 48px -24px rgba(15, 118, 110, 0.35);
+}
+
+.wide-section {
+    grid-column: 1 / -1;
+}
+
+section:nth-of-type(2) { animation-delay: 80ms; }
+section:nth-of-type(3) { animation-delay: 160ms; }
+section:nth-of-type(4) { animation-delay: 240ms; }
+
 section h2 {
-    color: #008080; /* Primary color */
-    margin-bottom: 0.5em; /* Added margin for spacing after h2 due to reset */
+    color: var(--color-primary);
+    margin-bottom: 0.75em;
+    font-size: 1.3rem;
+    font-weight: 600;
 }
 
 .section-icon {
@@ -98,46 +207,96 @@ section h2 {
 
 #portfolio h2,
 #expenses h2,
-#simulation h2 {
-    /* Primary color already applied via section h2 */
-    display: flex; /* Align icon and text nicely */
+#simulation h2,
+#dataManagement h2 {
+    display: flex;
     align-items: center;
+    gap: 0.75rem;
 }
 
 /* ==========================================================================
    Form Styling
    ========================================================================== */
+
 .form-group {
     display: flex;
     align-items: center;
-    margin-bottom: 0.75em;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-medium);
+    background-color: rgba(15, 118, 110, 0.05);
 }
 
 .form-group label {
-    flex-basis: 150px;
-    margin-right: 10px; /* Keep margin for spacing */
-    font-weight: bold;
-    font-size: 0.9em;
-    color: #555;
+    flex-basis: 180px;
+    margin-right: 0;
+    font-weight: 600;
+    font-size: 0.95em;
+    color: var(--color-text);
 }
 
 .form-group input[type="text"],
 .form-group input[type="number"],
 .form-group select {
     flex-grow: 1;
-    padding: 8px; /* Padding restored after reset */
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    /* font-size: 1em; Inherited via font:inherit */
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid rgba(15, 118, 110, 0.15);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface);
+    transition: border-color 180ms var(--transition-snappy), box-shadow 180ms var(--transition-snappy), transform 180ms var(--transition-snappy);
+    color: var(--color-text);
+}
+
+.switch-field {
+    justify-content: space-between;
+}
+
+.switch-field input[type="checkbox"] {
+    width: 48px;
+    height: 26px;
+    border-radius: 999px;
+    background: rgba(15, 118, 110, 0.25);
+    border: none;
+    position: relative;
+    appearance: none;
+    cursor: pointer;
+    transition: background-color 180ms var(--transition-snappy);
+}
+
+.switch-field input[type="checkbox"]::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-surface);
+    box-shadow: 0 6px 12px -6px rgba(15, 118, 110, 0.6);
+    transition: transform 180ms var(--transition-snappy);
+}
+
+.switch-field input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, rgba(15, 118, 110, 0.95), rgba(11, 84, 79, 0.9));
+}
+
+.switch-field input[type="checkbox"]:checked::before {
+    transform: translateX(20px);
+}
+
+.switch-field input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.18);
 }
 
 .form-group input[type="text"]:focus-visible,
 .form-group input[type="number"]:focus-visible,
 .form-group select:focus-visible {
-    border-color: #FFD700;
+    border-color: var(--color-primary);
     outline: none;
-    box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+    transform: translateY(-1px);
 }
 
 button:focus-visible,
@@ -149,24 +308,36 @@ button:focus-visible,
 /* ==========================================================================
    Button Styling
    ========================================================================== */
-button, .button-style-label { /* General button style, now also for labels styled as buttons */
-    background-color: #008080;
-    color: white;
-    border: none; /* Important to keep after reset */
-    padding: 10px 15px; /* Padding restored */
-    border-radius: 4px;
+button,
+.button-style-label {
+    background: linear-gradient(135deg, rgba(15, 118, 110, 0.98), rgba(11, 84, 79, 0.9));
+    color: #f5fdfc;
+    border: none;
+    padding: 0.85rem 1.4rem;
+    border-radius: 999px;
     cursor: pointer;
-    /* font-size: 1em; Inherited */
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-    margin-top: 10px; /* Increased margin-top for spacing after reset */
-    margin-bottom: 5px; /* Added margin for spacing */
-    display: inline-block; /* Important for labels to behave like buttons */
-    text-align: center; /* Ensure text is centered if label is wider */
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: transform 200ms var(--transition-snappy), box-shadow 200ms var(--transition-snappy), filter 200ms var(--transition-snappy);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 12px 24px -16px rgba(15, 118, 110, 0.8);
+    margin-top: 0.5rem;
 }
 
-button:hover, .button-style-label:hover {
-    background-color: #006666;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+button:hover,
+.button-style-label:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 30px -18px rgba(15, 118, 110, 0.55);
+    filter: brightness(1.04);
+}
+
+button:active,
+.button-style-label:active {
+    transform: translateY(0);
+    box-shadow: 0 12px 24px -18px rgba(15, 118, 110, 0.65);
 }
 
 /* Specific styling for the file input to make the label clickable like a button */
@@ -188,29 +359,36 @@ input[type="file"][style*="display: none"] {
 
 
 /* Buttons inside forms (Add/Update/Run) */
-#addAssetBtn, #addExpenseBtn, #runSimulationBtn {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    /* margin-top is from general button, can add more if needed */
+.button-pair {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+#addAssetBtn,
+#addExpenseBtn,
+#runSimulationBtn {
+    margin-left: 0;
+    margin-right: 0;
 }
 
 /* List item buttons (Edit/Delete) */
 ul button {
-    background-color: #e0e0e0;
-    color: #333;
-    padding: 5px 10px; /* Padding restored */
-    font-size: 0.85em; /* Specific font size for smaller buttons */
+    background: rgba(15, 118, 110, 0.12);
+    color: var(--color-primary-strong);
+    padding: 0.4rem 0.85rem;
+    font-size: 0.8em;
     margin-left: 5px;
-    border: 1px solid #ccc; /* Border restored */
-    /* margin-top: 0; Reset if it inherited from general button */
-    /* margin-bottom: 0; Reset if it inherited from general button */
+    border: none;
+    border-radius: 999px;
+    box-shadow: none;
+    transition: background-color 160ms var(--transition-snappy), color 160ms var(--transition-snappy), transform 160ms var(--transition-snappy);
 }
 
 ul button:hover {
-    background-color: #d0d0d0;
-    border-color: #bbb;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    background: rgba(15, 118, 110, 0.2);
+    color: var(--color-primary);
+    transform: translateY(-1px);
 }
 
 /* ==========================================================================
@@ -223,14 +401,22 @@ ul { /* General UL styling */
 }
 
 ul li { /* General LI styling for portfolio items primarily */
-    background-color: #fff;
-    border: 1px solid #eee;
-    padding: 10px;
-    margin-bottom: 8px;
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(15, 118, 110, 0.1);
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 0.75rem;
+    border-radius: var(--radius-small);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 12px 24px -20px rgba(15, 118, 110, 0.35);
+    transition: transform 180ms var(--transition-snappy), box-shadow 180ms var(--transition-snappy);
+}
+
+ul li:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px -22px rgba(15, 118, 110, 0.45);
 }
 
 /* Specific styling for #expenseList and its children */
@@ -262,35 +448,38 @@ ul li { /* General LI styling for portfolio items primarily */
 
 /* Total value paragraphs (e.g., "Total Portfolio Value: $X") */
 section > p {
-    margin-top: 1em;
-    font-weight: bold;
-    color: #008080; /* Primary color */
+    margin-top: 1.5em;
+    font-weight: 600;
+    color: var(--color-primary);
+    letter-spacing: 0.01em;
 }
 
 
 /* ==========================================================================
    Notification Styling
    ========================================================================== */
+
 .notification {
-    position: fixed; /* Or 'sticky' if preferred within a container */
-    top: 20px;
+    position: fixed;
+    top: 1.5rem;
     left: 50%;
-    transform: translateX(-50%) translateY(-30px);
-    padding: 15px 25px;
-    border-radius: 5px;
-    color: white;
-    font-size: 1em;
+    transform: translate(-50%, -20px);
+    padding: 0.9rem 1.5rem;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.95rem;
     z-index: 1000;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.5s ease, transform 0.5s ease;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: opacity 220ms var(--transition-snappy), transform 220ms var(--transition-snappy);
+    box-shadow: 0 22px 35px -25px rgba(15, 118, 110, 0.9);
+    background: linear-gradient(120deg, rgba(15, 118, 110, 0.95), rgba(11, 84, 79, 0.9));
 }
 
 .notification.show {
     opacity: 1;
     pointer-events: auto;
-    transform: translateX(-50%) translateY(0); /* Final position */
+    transform: translate(-50%, 0);
 }
 
 
@@ -305,41 +494,54 @@ section > p {
 /* ==========================================================================
    Simulation Results Table Styling
    ========================================================================== */
+#simulationResults {
+    margin-top: 1.5rem;
+    border-radius: var(--radius-medium);
+    background: rgba(15, 118, 110, 0.05);
+    padding: 1.25rem;
+}
+
 #simulationResults table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
     font-size: 0.9em;
+    background: var(--color-surface);
+    border-radius: var(--radius-small);
+    overflow: hidden;
 }
 
 #simulationResults th,
 #simulationResults td {
-    border: 1px solid #ddd;
-    padding: 8px;
+    border: 1px solid rgba(15, 118, 110, 0.08);
+    padding: 0.75rem;
     text-align: left;
 }
 
 #simulationResults th {
-    background-color: #e9e9e9; /* Lighter than primary, but distinct */
-    color: #333;
-    font-weight: bold;
+    background-color: rgba(15, 118, 110, 0.08);
+    color: var(--color-text);
+    font-weight: 600;
 }
 
 #simulationResults tbody tr:nth-child(even) {
-    background-color: #f9f9f9;
+    background-color: rgba(15, 118, 110, 0.03);
 }
 
 #simulationResults tbody tr:hover {
-    background-color: #f1f1f1;
+    background-color: rgba(15, 118, 110, 0.08);
 }
 
 #toggleChartBtn {
-    display: none;
-    margin-top: 15px;
+    display: inline-flex;
+    margin-top: 1rem;
 }
 
 #chartContainer {
-    margin-top: 10px;
+    margin-top: 1.25rem;
+    background: rgba(15, 118, 110, 0.05);
+    border-radius: var(--radius-medium);
+    padding: 1.5rem;
 }
 
 #chartContainer[hidden] {
@@ -350,39 +552,56 @@ section > p {
    Informational Text Styling (Quick Guide, Section Info)
    ========================================================================== */
 .quick-guide {
-    background-color: #e6f7ff;
-    border-left: 5px solid #008080;
-    padding: 15px; /* Padding restored */
-    margin: 20px 1em; /* Margin restored */
-    border-radius: 0 5px 5px 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 1.25rem;
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.6));
+    border: 1px solid rgba(15, 118, 110, 0.12);
+    padding: 1.75rem 2rem;
+    margin: 0 0 2.75rem;
+    border-radius: var(--radius-large);
+    box-shadow: 0 30px 60px -40px rgba(15, 118, 110, 0.45);
+    animation: float-in 600ms var(--transition-snappy) backwards;
+}
+
+.guide-heading {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    background: radial-gradient(circle at 30% 30%, rgba(15, 118, 110, 0.18), rgba(15, 118, 110, 0.08));
+    color: var(--color-primary);
+    box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.12);
 }
 
 .quick-guide p {
-    margin-bottom: 0.5em; /* Ensure spacing between paragraphs in quick-guide */
-    /* line-height: 1.5; from body */
-    color: #333;
+    margin-bottom: 0.65rem;
+    color: var(--color-text-muted);
+    font-size: 0.97rem;
 }
+
 .quick-guide p:last-child {
     margin-bottom: 0;
 }
 
-
 .quick-guide strong {
-    color: #008080;
+    color: var(--color-primary);
 }
 
 .simulation-disclaimer {
     font-style: italic;
     font-size: 0.9em;
-    color: #555;
-    margin-top: 10px; /* Margin restored */
+    color: var(--color-text-muted);
+    margin-top: 0.4rem;
 }
 
 .section-info {
-    font-size: 0.9em;
-    color: #555;
-    margin-bottom: 15px; /* Margin restored */
-    /* line-height: 1.5; from body */
+    font-size: 0.95em;
+    color: var(--color-text-muted);
+    margin-bottom: 1.25rem;
 }
 
 /* ==========================================================================
@@ -391,13 +610,13 @@ section > p {
 
 /* Styling for the parent expense context display div */
 #parentExpenseInfo { /* Was .parent-context-display, but JS uses ID */
-    background-color: #f0f0f0;
-    border: 1px solid #ddd;
-    padding: 8px;
+    background-color: rgba(15, 118, 110, 0.08);
+    border: 1px solid rgba(15, 118, 110, 0.15);
+    padding: 0.75rem 1rem;
     margin-bottom: 10px; /* Already set by JS, but good to have in CSS */
-    border-radius: 4px;
+    border-radius: var(--radius-small);
     font-style: italic;
-    color: #333;
+    color: var(--color-text-muted);
     font-size: 0.9em; /* Slightly smaller text */
 }
 
@@ -432,21 +651,23 @@ section > p {
         width: 100%; /* Ensure they take full width */
     }
 
-    #addAssetBtn, #addExpenseBtn, #runSimulationBtn {
+    .button-pair {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .button-pair > * {
         width: 100%;
         max-width: 350px; /* Prevent them from being overly wide */
-        /* margin-left: 0; Already auto from previous rule, should still center */
-        /* margin-right: 0; */
     }
 
     section {
-        margin: 0.75em;
-        padding: 0.75em;
+        padding: 1.5rem;
     }
 
     .quick-guide {
-        margin: 10px 0.75em;
-        padding: 10px;
+        grid-template-columns: 1fr;
+        text-align: center;
     }
 
     /* Make table scrollable if it's too wide */
@@ -461,12 +682,8 @@ section > p {
         font-size: 0.95em; /* Slightly reduce base font for smaller screens */
     }
 
-    header h1 {
+    .app-header h1 {
         font-size: 1.8em; /* Reduce header font size */
-    }
-
-    h1 { /* Main page title if it exists outside header */
-        font-size: 1.5em;
     }
 
     section h2 {
@@ -526,10 +743,6 @@ section > p {
         padding: 6px; /* Reduce padding in table cells */
     }
 
-    .quick-guide {
-        margin: 10px 0.5em;
-        padding: 8px;
-    }
     .quick-guide p, .section-info, .simulation-disclaimer {
         font-size: 0.9em;
     }
@@ -542,6 +755,17 @@ section > p {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    section,
+    .quick-guide,
     .notification,
     button,
     .button-style-label,
@@ -550,5 +774,16 @@ section > p {
     .form-group select {
         transition: none !important;
         box-shadow: none !important;
+    }
+}
+
+@keyframes float-in {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
