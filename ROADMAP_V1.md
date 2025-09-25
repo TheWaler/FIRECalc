@@ -164,4 +164,8 @@ The primary goals for V1.0 are:
 *   **Automated Testing:** Introduce unit tests and integration tests for core logic.
 *   **Localization/Internationalization (i18n):** Support for multiple languages and currencies.
 *   **Accessibility (a11y) Enhancements:** Ensure the application is usable by people with disabilities, following WCAG guidelines.
+    *   **Status: Implemented**
+    *   **Summary of Changes:**
+        *   Introduced a skip link, improved focus outlines, and respected reduced-motion preferences to support keyboard and sensory accessibility.
+        *   Enhanced notifications, simulation summaries, and chart toggles with ARIA semantics so assistive technologies receive timely updates.
 *   **Mobile Responsiveness:** Improve the layout and usability on mobile devices.
