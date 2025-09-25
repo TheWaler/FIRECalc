@@ -29,6 +29,288 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000); // Notification visible for 3 seconds
     }
 
+    /**
+     * Generates a normally distributed random number using the Box-Muller transform.
+     * @param {number} mean - The mean of the distribution.
+     * @param {number} stdDev - The standard deviation of the distribution.
+     * @returns {number} A random number drawn from N(mean, stdDev^2).
+     */
+    function randomNormal(mean = 0, stdDev = 1) {
+        let u1 = 0;
+        let u2 = 0;
+        while (u1 === 0) {
+            u1 = Math.random();
+        }
+        while (u2 === 0) {
+            u2 = Math.random();
+        }
+        const randStdNormal = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+        return mean + stdDev * randStdNormal;
+    }
+
+    /**
+     * Calculates the percentile value for a sorted array.
+     * @param {Array<number>} sortedArray - Array sorted in ascending order.
+     * @param {number} percentile - Percentile value between 0 and 100.
+     * @returns {number} The interpolated percentile value.
+     */
+    function calculatePercentile(sortedArray, percentile) {
+        if (!sortedArray.length) {
+            return 0;
+        }
+        if (percentile <= 0) {
+            return sortedArray[0];
+        }
+        if (percentile >= 100) {
+            return sortedArray[sortedArray.length - 1];
+        }
+
+        const index = (sortedArray.length - 1) * (percentile / 100);
+        const lowerIndex = Math.floor(index);
+        const upperIndex = Math.ceil(index);
+
+        if (lowerIndex === upperIndex) {
+            return sortedArray[lowerIndex];
+        }
+
+        const weight = index - lowerIndex;
+        return sortedArray[lowerIndex] * (1 - weight) + sortedArray[upperIndex] * weight;
+    }
+
+    /**
+     * Runs a Monte Carlo simulation using the provided inputs.
+     * @param {object} inputs - Validated simulation inputs.
+     * @param {object} [options] - Optional configuration for the Monte Carlo simulation.
+     * @param {number} [options.iterations=1000] - Number of Monte Carlo iterations.
+     * @param {number} [options.returnStdDev=12] - Standard deviation for annual returns (percentage points).
+     * @param {number} [options.baseAnnualWithdrawal] - Base annual withdrawal amount before inflation adjustments.
+     * @param {boolean} [options.usingExpenses=false] - Indicates whether the withdrawal amount is derived from expenses.
+     * @returns {object} Summary statistics from the Monte Carlo simulation.
+     */
+    function runMonteCarloSimulation(inputs, options = {}) {
+        const iterations = typeof options.iterations === 'number' && options.iterations > 0 ? Math.floor(options.iterations) : 1000;
+        const returnStdDev = typeof options.returnStdDev === 'number' && options.returnStdDev >= 0 ? options.returnStdDev : 12;
+        const fallbackWithdrawal = inputs.initialPortfolioValue * (inputs.withdrawalRate / 100);
+        const baseAnnualWithdrawal = (typeof options.baseAnnualWithdrawal === 'number' && options.baseAnnualWithdrawal > 0)
+            ? options.baseAnnualWithdrawal
+            : fallbackWithdrawal;
+        const usingExpenses = Boolean(options.usingExpenses && baseAnnualWithdrawal !== fallbackWithdrawal);
+
+        const inflationRateDecimal = inputs.expectedInflationRate / 100;
+
+        const endingBalances = [];
+        const depletionYears = [];
+        let successCount = 0;
+
+        for (let iteration = 0; iteration < iterations; iteration++) {
+            let portfolioValue = inputs.initialPortfolioValue;
+            const guardrailReferenceInitialValue = inputs.initialPortfolioValue;
+            let depletedYear = -1;
+
+            for (let year = 0; year < inputs.simulationYears; year++) {
+                const startOfYearValue = portfolioValue;
+                let targetWithdrawal = baseAnnualWithdrawal * Math.pow(1 + inflationRateDecimal, year);
+
+                if (inputs.useGuardrail && startOfYearValue < (guardrailReferenceInitialValue * 0.50)) {
+                    targetWithdrawal *= 0.90;
+                }
+
+                const actualWithdrawal = Math.min(targetWithdrawal, portfolioValue);
+                portfolioValue -= actualWithdrawal;
+
+                if (portfolioValue <= 0) {
+                    portfolioValue = 0;
+                    depletedYear = year + 1;
+                    break;
+                }
+
+                const annualReturn = Math.max(-100, randomNormal(inputs.nominalReturnRate, returnStdDev));
+                portfolioValue *= (1 + (annualReturn / 100));
+
+                if (portfolioValue <= 0) {
+                    portfolioValue = 0;
+                    depletedYear = year + 1;
+                    break;
+                }
+            }
+
+            if (depletedYear === -1) {
+                successCount += 1;
+            }
+
+            endingBalances.push(portfolioValue);
+            depletionYears.push(depletedYear);
+        }
+
+        endingBalances.sort((a, b) => a - b);
+        const endingBalancesTotal = endingBalances.reduce((sum, value) => sum + value, 0);
+
+        const failedYears = depletionYears.filter(year => year !== -1);
+        const averageDepletionYear = failedYears.length
+            ? failedYears.reduce((sum, value) => sum + value, 0) / failedYears.length
+            : null;
+
+        return {
+            iterations,
+            usingExpenses,
+            baseAnnualWithdrawal,
+            successCount,
+            successRate: (successCount / iterations) * 100,
+            failureRate: 100 - ((successCount / iterations) * 100),
+            medianEndingBalance: calculatePercentile(endingBalances, 50),
+            percentile10EndingBalance: calculatePercentile(endingBalances, 10),
+            percentile90EndingBalance: calculatePercentile(endingBalances, 90),
+            averageEndingBalance: endingBalancesTotal / iterations,
+            averageDepletionYear,
+            simulationYears: inputs.simulationYears
+        };
+    }
+
+    /**
+     * Displays the Monte Carlo simulation summary in the UI.
+     * @param {object} results - Summary statistics from runMonteCarloSimulation.
+     * @param {object} inputs - Simulation inputs for contextual messaging.
+     */
+    function displayMonteCarloResults(results, inputs) {
+        if (!monteCarloResultsDiv || !results) {
+            return;
+        }
+
+        monteCarloResultsDiv.innerHTML = '';
+
+        const heading = document.createElement('h3');
+        heading.textContent = `Monte Carlo Simulation (${results.iterations} runs)`;
+        heading.classList.add('results-title');
+        monteCarloResultsDiv.appendChild(heading);
+
+        const baseWithdrawalFormatted = `$${results.baseAnnualWithdrawal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const spendingParagraph = document.createElement('p');
+        spendingParagraph.textContent = results.usingExpenses
+            ? `Annual spending is based on your recorded expenses (${baseWithdrawalFormatted}) and is adjusted for inflation each year.`
+            : `Annual spending is based on a ${inputs.withdrawalRate}% withdrawal rate (${baseWithdrawalFormatted}) and is adjusted for inflation each year.`;
+        monteCarloResultsDiv.appendChild(spendingParagraph);
+
+        const successParagraph = document.createElement('p');
+        successParagraph.textContent = `Success Rate: ${results.successRate.toFixed(1)}% (${results.successCount} of ${results.iterations} simulations sustained ${results.simulationYears} years).`;
+        monteCarloResultsDiv.appendChild(successParagraph);
+
+        if (results.averageDepletionYear) {
+            const failureParagraph = document.createElement('p');
+            failureParagraph.textContent = `Average depletion year for unsuccessful runs: Year ${results.averageDepletionYear.toFixed(1)}.`;
+            monteCarloResultsDiv.appendChild(failureParagraph);
+        }
+
+        const statsList = document.createElement('ul');
+
+        const medianItem = document.createElement('li');
+        medianItem.textContent = `Median ending balance: $${results.medianEndingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        statsList.appendChild(medianItem);
+
+        const percentile10Item = document.createElement('li');
+        percentile10Item.textContent = `10th percentile ending balance: $${results.percentile10EndingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        statsList.appendChild(percentile10Item);
+
+        const percentile90Item = document.createElement('li');
+        percentile90Item.textContent = `90th percentile ending balance: $${results.percentile90EndingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        statsList.appendChild(percentile90Item);
+
+        const averageItem = document.createElement('li');
+        averageItem.textContent = `Average ending balance: $${results.averageEndingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        statsList.appendChild(averageItem);
+
+        monteCarloResultsDiv.appendChild(statsList);
+    }
+
+    /**
+     * Runs the deterministic simulation and accompanying Monte Carlo simulation.
+     * @param {object} [options]
+     * @param {boolean} [options.suppressNotifications=false] - When true, validation errors do not trigger UI notifications.
+     * @param {boolean} [options.triggeredByAuto=false] - Indicates if the run was triggered automatically.
+     */
+    function runSimulationAndMonteCarlo({ suppressNotifications = false, triggeredByAuto = false } = {}) {
+        const inputs = getSimulationInputs(suppressNotifications);
+        if (!inputs) {
+            return;
+        }
+
+        const simulationResults = performSimulationLogic(inputs);
+        displaySimulationResults(simulationResults, inputs.simulationYears, inputs);
+
+        const chartLabels = ['Year 0'];
+        const chartDataPointsNominal = [inputs.initialPortfolioValue];
+        const chartDataPointsReal = [inputs.initialPortfolioValue];
+
+        const inflationRateDecimal = inputs.expectedInflationRate / 100;
+        simulationResults.simulationData.forEach(data => {
+            chartLabels.push(`Year ${data.year}`);
+            chartDataPointsNominal.push(data.endValue);
+
+            const realEndValue = data.endValue / Math.pow(1 + inflationRateDecimal, data.year);
+            chartDataPointsReal.push(realEndValue);
+        });
+
+        const chartWasHidden = chartContainer ? chartContainer.hasAttribute('hidden') : true;
+        const toggleWasExpanded = toggleChartBtn ? toggleChartBtn.getAttribute('aria-expanded') === 'true' : false;
+
+        if (toggleChartBtn) {
+            toggleChartBtn.style.display = 'inline-block';
+        }
+
+        updateChart(chartLabels, chartDataPointsNominal, chartDataPointsReal, inputs);
+
+        if (triggeredByAuto) {
+            if (chartContainer) {
+                if (!chartWasHidden || toggleWasExpanded) {
+                    chartContainer.removeAttribute('hidden');
+                } else {
+                    chartContainer.setAttribute('hidden', '');
+                }
+            }
+            if (toggleChartBtn) {
+                const expanded = !chartWasHidden || toggleWasExpanded;
+                toggleChartBtn.textContent = expanded ? 'Hide Chart' : 'Show Chart';
+                toggleChartBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            }
+        } else {
+            if (chartContainer) {
+                chartContainer.setAttribute('hidden', '');
+            }
+            if (toggleChartBtn) {
+                toggleChartBtn.textContent = 'Show Chart';
+                toggleChartBtn.setAttribute('aria-expanded', 'false');
+            }
+            if (!suppressNotifications) {
+                showNotification('Simulation complete.', 'success');
+            }
+        }
+
+        const annualExpensesValue = parseFloat(totalAnnualExpensesSpan.textContent.replace(/[^0-9.-]+/g, '')) || 0;
+        const initialAnnualWithdrawalNominal = inputs.initialPortfolioValue * (inputs.withdrawalRate / 100);
+        const baseAnnualWithdrawal = annualExpensesValue > 0 ? annualExpensesValue : initialAnnualWithdrawalNominal;
+        const usingExpenses = annualExpensesValue > 0;
+
+        const monteCarloResults = runMonteCarloSimulation(inputs, {
+            baseAnnualWithdrawal,
+            usingExpenses
+        });
+
+        displayMonteCarloResults(monteCarloResults, inputs);
+    }
+
+    /**
+     * Automatically runs simulations when new data is available and inputs are valid.
+     */
+    function autoRunSimulationsIfPossible() {
+        const totalPortfolioValue = parseFloat(totalPortfolioValueSpan.textContent.replace(/[^0-9.-]+/g, '')) || 0;
+        if (totalPortfolioValue <= 0) {
+            if (monteCarloResultsDiv) {
+                monteCarloResultsDiv.innerHTML = '';
+            }
+            return;
+        }
+        runSimulationAndMonteCarlo({ suppressNotifications: true, triggeredByAuto: true });
+    }
+
     // --- Portfolio Tracking ---
     const assetNameInput = document.getElementById('assetName');
     const assetValueInput = document.getElementById('assetValue');
@@ -116,6 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         totalPortfolioValueSpan.textContent = `$${totalValue.toLocaleString()}`;
+        autoRunSimulationsIfPossible();
     }
 
     if (addAssetBtn) {
@@ -412,6 +695,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         totalAnnualExpensesSpan.textContent = `$${grandTotalAnnualCost.toLocaleString()}`;
+        autoRunSimulationsIfPossible();
     }
 
     if (addExpenseBtn) {
@@ -550,6 +834,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleChartBtn = document.getElementById('toggleChartBtn'); // Chart button
     const chartContainer = document.getElementById('chartContainer'); // Chart container div
     const simulationChartCanvas = document.getElementById('simulationChart'); // Canvas element
+    const monteCarloResultsDiv = document.getElementById('monteCarloResults');
 
     let currentChart = null; // To hold the chart instance
 
@@ -557,7 +842,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * Gathers and validates inputs for the withdrawal simulation.
      * @returns {object|null} An object with simulation parameters or null if validation fails.
      */
-    function getSimulationInputs() {
+    function getSimulationInputs(suppressNotifications = false) {
         const rawPortfolioValue = totalPortfolioValueSpan.textContent.replace(/[^0-9.-]+/g, "");
         const initialPortfolioValue = parseFloat(rawPortfolioValue);
         const withdrawalRate = parseFloat(withdrawalRateInput.value); // This is the SWR
@@ -568,28 +853,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Validate that the portfolio has a value before simulation
         if (isNaN(initialPortfolioValue) || initialPortfolioValue <= 0) { // Check for <=0 for meaningful simulation
-            showNotification('Initial portfolio value must be positive. Please add assets to your portfolio.', 'error');
+            if (!suppressNotifications) {
+                showNotification('Initial portfolio value must be positive. Please add assets to your portfolio.', 'error');
+            }
             return null;
         }
         if (isNaN(withdrawalRate) || withdrawalRate <= 0) {
-            showNotification('Withdrawal rate must be a positive number.', 'error');
+            if (!suppressNotifications) {
+                showNotification('Withdrawal rate must be a positive number.', 'error');
+            }
             return null;
         }
         if (isNaN(simulationYears) || simulationYears <= 0) {
-            showNotification('Simulation years must be a positive integer.', 'error');
+            if (!suppressNotifications) {
+                showNotification('Simulation years must be a positive integer.', 'error');
+            }
             return null;
         }
         // Validation for Expected Annual Inflation Rate: must be a number and not negative.
         if (isNaN(expectedInflationRate)) {
-            showNotification('Expected inflation rate must be a valid number.', 'error');
+            if (!suppressNotifications) {
+                showNotification('Expected inflation rate must be a valid number.', 'error');
+            }
             return null;
         }
         if (expectedInflationRate < 0) {
-            showNotification('Expected inflation rate cannot be negative. Please enter a non-negative number.', 'error');
+            if (!suppressNotifications) {
+                showNotification('Expected inflation rate cannot be negative. Please enter a non-negative number.', 'error');
+            }
             return null;
         }
         if (isNaN(nominalReturnRate) || nominalReturnRate < 0) { // Allow 0% return
-            showNotification('Expected investment rate of return must be a non-negative number.', 'error');
+            if (!suppressNotifications) {
+                showNotification('Expected investment rate of return must be a non-negative number.', 'error');
+            }
             return null;
         }
         return { initialPortfolioValue, withdrawalRate, simulationYears, useGuardrail, nominalReturnRate, expectedInflationRate };
@@ -780,39 +1077,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (runSimulationBtn) {
         runSimulationBtn.addEventListener('click', () => {
-            const inputs = getSimulationInputs();
-            if (!inputs) return;
-
-            const simulationResults = performSimulationLogic(inputs);
-            displaySimulationResults(simulationResults, inputs.simulationYears, inputs);
-
-            // Prepare data for chart after displaying table results
-            // The chart will show portfolio value over time.
-            // Year 0 is initial portfolio value. Subsequent years are endValue from simulationData.
-            const chartLabels = ['Year 0'];
-            const chartDataPointsNominal = [inputs.initialPortfolioValue];
-            const chartDataPointsReal = [inputs.initialPortfolioValue];
-
-            const inflationRateDecimal = inputs.expectedInflationRate / 100;
-            simulationResults.simulationData.forEach(data => {
-                chartLabels.push(`Year ${data.year}`);
-                chartDataPointsNominal.push(data.endValue);
-
-                const realEndValue = data.endValue / Math.pow(1 + inflationRateDecimal, data.year);
-                chartDataPointsReal.push(realEndValue);
-            });
-
-            updateChart(chartLabels, chartDataPointsNominal, chartDataPointsReal, inputs);
-            toggleChartBtn.style.display = 'inline-block';
-            // Ensure chart is hidden by default when new simulation is run, button text to "Show"
-            if (chartContainer) {
-                chartContainer.setAttribute('hidden', '');
-            }
-            toggleChartBtn.textContent = 'Show Chart';
-            toggleChartBtn.setAttribute('aria-expanded', 'false');
-
-
-            showNotification('Simulation complete.', 'success');
+            runSimulationAndMonteCarlo({ suppressNotifications: false, triggeredByAuto: false });
         });
     } else {
         console.error('Run Simulation button not found');
