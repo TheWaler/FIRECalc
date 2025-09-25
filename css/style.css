@@ -9,13 +9,27 @@
     box-sizing: border-box;
 }
 
+:root {
+    --primary: #0c8374;
+    --primary-dark: #076457;
+    --accent: #ffd166;
+    --surface: #ffffff;
+    --surface-muted: #f4f7f9;
+    --border: rgba(12, 131, 116, 0.1);
+    --text: #1f2933;
+    --muted: #5f6c7b;
+    --shadow: 0 18px 45px -25px rgba(17, 65, 60, 0.55);
+    --transition: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Sensible defaults after reset */
 body {
     line-height: 1.6;
-    font-family: sans-serif;
-    background-color: #F0F0F0; /* Secondary color */
-    color: #333;
-    /* margin and padding are 0 from reset */
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: radial-gradient(160% 120% at 50% 0%, rgba(12, 131, 116, 0.08) 0%, transparent 55%),
+                linear-gradient(180deg, #f8fbfc 0%, #eef3f6 100%);
+    color: var(--text);
+    min-height: 100vh;
 }
 
 .skip-link {
@@ -57,19 +71,40 @@ input, button, textarea, select {
    Header Styling
    ========================================================================== */
 header {
-    background-color: #008080; /* Primary color */
-    color: white; /* For better contrast on primary color */
-    padding: 1em 0;
+    background: linear-gradient(120deg, rgba(12, 131, 116, 0.95), rgba(7, 100, 87, 0.9));
+    color: #fff;
+    padding: 2.5rem 1.5rem 2rem;
     text-align: center;
+    position: relative;
+    overflow: hidden;
 }
 
-/* header h1 already has margin:0 from reset */
+header::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(90% 75% at 50% 0%, rgba(255, 209, 102, 0.18) 0%, transparent 60%);
+    opacity: 0.8;
+    pointer-events: none;
+}
 
-h1 { /* This will style the main header "FIRECalc" */
-    color: #008080; /* Primary color */
-    text-align: center;
-    padding: 1em 0;
-    /* font-size will be default or inherited, can adjust if needed */
+header h1 {
+    position: relative;
+    z-index: 1;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    font-size: clamp(2rem, 4vw, 2.5rem);
+}
+
+.header-tagline {
+    position: relative;
+    z-index: 1;
+    margin-top: 0.75rem;
+    font-size: 1.05rem;
+    max-width: 40rem;
+    margin-left: auto;
+    margin-right: auto;
+    color: rgba(255, 255, 255, 0.82);
 }
 
 
@@ -77,16 +112,30 @@ h1 { /* This will style the main header "FIRECalc" */
    General Section Layout
    ========================================================================== */
 section {
-    border: 1px solid #ccc;
-    padding: 1em;
-    margin: 1em; /* This margin is important to keep for sections */
-    background-color: white;
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    border-radius: 16px;
+    background-color: var(--surface);
+    box-shadow: var(--shadow);
+    margin: 0;
+    scroll-margin-top: 2.5rem;
+    transition: transform 280ms var(--transition), box-shadow 280ms var(--transition), border-color 280ms var(--transition);
+    animation: fadeSlide 540ms var(--transition) both;
 }
 
-/* section h2 already has margin-top:0 from reset */
+section:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 22px 55px -30px rgba(12, 131, 116, 0.55);
+    border-color: rgba(12, 131, 116, 0.28);
+}
+
 section h2 {
-    color: #008080; /* Primary color */
-    margin-bottom: 0.5em; /* Added margin for spacing after h2 due to reset */
+    color: var(--primary);
+    margin-bottom: 0.85rem;
+    font-size: 1.45rem;
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
 }
 
 .section-icon {
@@ -96,13 +145,10 @@ section h2 {
     margin-right: 8px;
 }
 
-#portfolio h2,
-#expenses h2,
-#simulation h2 {
-    /* Primary color already applied via section h2 */
-    display: flex; /* Align icon and text nicely */
-    align-items: center;
-}
+section:nth-of-type(1) { animation-delay: 60ms; }
+section:nth-of-type(2) { animation-delay: 120ms; }
+section:nth-of-type(3) { animation-delay: 180ms; }
+section:nth-of-type(4) { animation-delay: 240ms; }
 
 /* ==========================================================================
    Form Styling
@@ -110,63 +156,77 @@ section h2 {
 .form-group {
     display: flex;
     align-items: center;
-    margin-bottom: 0.75em;
+    gap: 0.85rem;
+    margin-bottom: 1rem;
 }
 
 .form-group label {
-    flex-basis: 150px;
-    margin-right: 10px; /* Keep margin for spacing */
-    font-weight: bold;
-    font-size: 0.9em;
-    color: #555;
+    flex-basis: 170px;
+    margin-right: 0;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--muted);
 }
 
 .form-group input[type="text"],
 .form-group input[type="number"],
 .form-group select {
     flex-grow: 1;
-    padding: 8px; /* Padding restored after reset */
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    /* font-size: 1em; Inherited via font:inherit */
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid rgba(95, 108, 123, 0.25);
+    border-radius: 10px;
+    background-color: var(--surface-muted);
+    transition: border-color 220ms var(--transition), box-shadow 220ms var(--transition), background-color 220ms var(--transition);
 }
 
 .form-group input[type="text"]:focus-visible,
 .form-group input[type="number"]:focus-visible,
 .form-group select:focus-visible {
-    border-color: #FFD700;
+    border-color: rgba(12, 131, 116, 0.45);
     outline: none;
-    box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 0 4px rgba(12, 131, 116, 0.14);
+    background-color: #fff;
 }
 
 button:focus-visible,
 .button-style-label:focus-visible {
-    outline: 3px solid #FFD700;
-    outline-offset: 2px;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(255, 209, 102, 0.45);
 }
 
 /* ==========================================================================
    Button Styling
    ========================================================================== */
 button, .button-style-label { /* General button style, now also for labels styled as buttons */
-    background-color: #008080;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
-    border: none; /* Important to keep after reset */
-    padding: 10px 15px; /* Padding restored */
-    border-radius: 4px;
+    border: none;
+    padding: 0.75rem 1.15rem;
+    border-radius: 999px;
     cursor: pointer;
-    /* font-size: 1em; Inherited */
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-    margin-top: 10px; /* Increased margin-top for spacing after reset */
-    margin-bottom: 5px; /* Added margin for spacing */
-    display: inline-block; /* Important for labels to behave like buttons */
-    text-align: center; /* Ensure text is centered if label is wider */
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    transition: transform 200ms var(--transition), box-shadow 220ms var(--transition), filter 200ms var(--transition);
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
 }
 
-button:hover, .button-style-label:hover {
-    background-color: #006666;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+button:hover,
+.button-style-label:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 30px -20px rgba(12, 131, 116, 0.75);
+    filter: brightness(1.03);
+}
+
+button:active,
+.button-style-label:active {
+    transform: translateY(0);
+    box-shadow: 0 8px 24px -18px rgba(12, 131, 116, 0.75);
+    filter: brightness(0.97);
 }
 
 /* Specific styling for the file input to make the label clickable like a button */
@@ -188,29 +248,31 @@ input[type="file"][style*="display: none"] {
 
 
 /* Buttons inside forms (Add/Update/Run) */
-#addAssetBtn, #addExpenseBtn, #runSimulationBtn {
+#addAssetBtn,
+#addExpenseBtn,
+#runSimulationBtn {
     display: block;
     margin-left: auto;
     margin-right: auto;
-    /* margin-top is from general button, can add more if needed */
+    min-width: 200px;
 }
 
 /* List item buttons (Edit/Delete) */
 ul button {
-    background-color: #e0e0e0;
-    color: #333;
-    padding: 5px 10px; /* Padding restored */
-    font-size: 0.85em; /* Specific font size for smaller buttons */
+    background: rgba(12, 131, 116, 0.1);
+    color: var(--primary-dark);
+    padding: 0.45rem 0.75rem;
+    font-size: 0.85em;
     margin-left: 5px;
-    border: 1px solid #ccc; /* Border restored */
-    /* margin-top: 0; Reset if it inherited from general button */
-    /* margin-bottom: 0; Reset if it inherited from general button */
+    border: 1px solid rgba(12, 131, 116, 0.25);
+    box-shadow: none;
+    border-radius: 8px;
 }
 
 ul button:hover {
-    background-color: #d0d0d0;
-    border-color: #bbb;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    background-color: rgba(12, 131, 116, 0.18);
+    border-color: rgba(12, 131, 116, 0.35);
+    box-shadow: none;
 }
 
 /* ==========================================================================
@@ -223,14 +285,22 @@ ul { /* General UL styling */
 }
 
 ul li { /* General LI styling for portfolio items primarily */
-    background-color: #fff;
-    border: 1px solid #eee;
-    padding: 10px;
-    margin-bottom: 8px;
-    border-radius: 4px;
+    background: var(--surface-muted);
+    border: 1px solid rgba(95, 108, 123, 0.12);
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
+    transition: transform 200ms var(--transition), border-color 200ms var(--transition), box-shadow 200ms var(--transition);
+}
+
+ul li:hover {
+    transform: translateY(-2px);
+    border-color: rgba(12, 131, 116, 0.32);
+    box-shadow: 0 12px 28px -24px rgba(17, 65, 60, 0.6);
 }
 
 /* Specific styling for #expenseList and its children */
@@ -256,15 +326,15 @@ ul li { /* General LI styling for portfolio items primarily */
 #expenseList ul li {
     /* Sub-items might need slightly different padding or borders if desired, e.g., less padding */
     padding: 8px;
-    border-left: 3px solid #008080; /* Indicate nesting */
+    border-left: 3px solid var(--primary); /* Indicate nesting */
 }
 
 
 /* Total value paragraphs (e.g., "Total Portfolio Value: $X") */
 section > p {
-    margin-top: 1em;
-    font-weight: bold;
-    color: #008080; /* Primary color */
+    margin-top: 1rem;
+    font-weight: 600;
+    color: var(--primary);
 }
 
 
@@ -272,25 +342,26 @@ section > p {
    Notification Styling
    ========================================================================== */
 .notification {
-    position: fixed; /* Or 'sticky' if preferred within a container */
-    top: 20px;
+    position: fixed;
+    top: 24px;
     left: 50%;
-    transform: translateX(-50%) translateY(-30px);
-    padding: 15px 25px;
-    border-radius: 5px;
+    transform: translateX(-50%) translateY(-24px);
+    padding: 0.85rem 1.2rem;
+    border-radius: 14px;
     color: white;
-    font-size: 1em;
+    font-size: 0.95rem;
     z-index: 1000;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.5s ease, transform 0.5s ease;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: opacity 260ms var(--transition), transform 260ms var(--transition);
+    box-shadow: 0 20px 40px -28px rgba(17, 65, 60, 0.65);
+    backdrop-filter: blur(8px);
 }
 
 .notification.show {
     opacity: 1;
     pointer-events: auto;
-    transform: translateX(-50%) translateY(0); /* Final position */
+    transform: translateX(-50%) translateY(0);
 }
 
 
@@ -305,41 +376,61 @@ section > p {
 /* ==========================================================================
    Simulation Results Table Styling
    ========================================================================== */
+#simulationResults {
+    margin-top: 1.25rem;
+    background: var(--surface-muted);
+    border-radius: 14px;
+    padding: 1rem;
+    border: 1px solid rgba(95, 108, 123, 0.15);
+}
+
+#simulationResults > div {
+    margin-bottom: 0.65rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+}
+
+#simulationResults > div:last-child {
+    margin-bottom: 0;
+}
+
 #simulationResults table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    margin-top: 0.75rem;
     font-size: 0.9em;
+    overflow: hidden;
+    border-radius: 12px;
 }
 
 #simulationResults th,
 #simulationResults td {
-    border: 1px solid #ddd;
-    padding: 8px;
+    border: 1px solid rgba(95, 108, 123, 0.18);
+    padding: 0.75rem;
     text-align: left;
 }
 
 #simulationResults th {
-    background-color: #e9e9e9; /* Lighter than primary, but distinct */
-    color: #333;
-    font-weight: bold;
+    background-color: rgba(12, 131, 116, 0.12);
+    color: var(--primary-dark);
+    font-weight: 600;
 }
 
 #simulationResults tbody tr:nth-child(even) {
-    background-color: #f9f9f9;
+    background-color: rgba(255, 255, 255, 0.65);
 }
 
 #simulationResults tbody tr:hover {
-    background-color: #f1f1f1;
+    background-color: rgba(12, 131, 116, 0.08);
 }
 
 #toggleChartBtn {
     display: none;
-    margin-top: 15px;
+    margin-top: 1rem;
 }
 
 #chartContainer {
-    margin-top: 10px;
+    margin-top: 0.75rem;
 }
 
 #chartContainer[hidden] {
@@ -350,17 +441,19 @@ section > p {
    Informational Text Styling (Quick Guide, Section Info)
    ========================================================================== */
 .quick-guide {
-    background-color: #e6f7ff;
-    border-left: 5px solid #008080;
-    padding: 15px; /* Padding restored */
-    margin: 20px 1em; /* Margin restored */
-    border-radius: 0 5px 5px 0;
+    background: rgba(255, 255, 255, 0.66);
+    border: 1px solid rgba(12, 131, 116, 0.18);
+    border-left: 6px solid var(--primary);
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px;
+    margin: 0;
+    box-shadow: var(--shadow);
+    animation: fadeSlide 420ms var(--transition) both;
 }
 
 .quick-guide p {
-    margin-bottom: 0.5em; /* Ensure spacing between paragraphs in quick-guide */
-    /* line-height: 1.5; from body */
-    color: #333;
+    margin-bottom: 0.6em;
+    color: var(--text);
 }
 .quick-guide p:last-child {
     margin-bottom: 0;
@@ -368,21 +461,20 @@ section > p {
 
 
 .quick-guide strong {
-    color: #008080;
+    color: var(--primary);
 }
 
 .simulation-disclaimer {
     font-style: italic;
     font-size: 0.9em;
-    color: #555;
-    margin-top: 10px; /* Margin restored */
+    color: var(--muted);
+    margin-top: 0.75rem;
 }
 
 .section-info {
-    font-size: 0.9em;
-    color: #555;
-    margin-bottom: 15px; /* Margin restored */
-    /* line-height: 1.5; from body */
+    font-size: 0.95em;
+    color: var(--muted);
+    margin-bottom: 1.1rem;
 }
 
 /* ==========================================================================
@@ -391,13 +483,13 @@ section > p {
 
 /* Styling for the parent expense context display div */
 #parentExpenseInfo { /* Was .parent-context-display, but JS uses ID */
-    background-color: #f0f0f0;
-    border: 1px solid #ddd;
-    padding: 8px;
-    margin-bottom: 10px; /* Already set by JS, but good to have in CSS */
-    border-radius: 4px;
+    background-color: rgba(12, 131, 116, 0.08);
+    border: 1px solid rgba(12, 131, 116, 0.25);
+    padding: 0.75rem;
+    margin-bottom: 0.9rem;
+    border-radius: 10px;
     font-style: italic;
-    color: #333;
+    color: var(--primary-dark);
     font-size: 0.9em; /* Slightly smaller text */
 }
 
@@ -413,131 +505,102 @@ section > p {
 
 
 /* Tablet-like screens */
-@media (max-width: 768px) {
+.content-wrapper {
+    max-width: 1100px;
+    margin: -3rem auto 4rem;
+    padding: 0 1.5rem 3rem;
+    display: grid;
+    gap: 1.75rem;
+}
+
+.content-wrapper > * {
+    width: 100%;
+}
+
+@media (max-width: 900px) {
+    .content-wrapper {
+        margin-top: -2.5rem;
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+        gap: 1.5rem;
+    }
+
     .form-group {
         flex-direction: column;
-        align-items: stretch; /* Make inputs full width */
+        align-items: stretch;
     }
 
     .form-group label {
-        flex-basis: auto; /* Reset basis */
-        width: 100%;     /* Full width */
-        margin-right: 0;
-        margin-bottom: 5px; /* Space between label and input */
+        flex-basis: auto;
+        width: 100%;
     }
 
     .form-group input[type="text"],
     .form-group input[type="number"],
     .form-group select {
-        width: 100%; /* Ensure they take full width */
-    }
-
-    #addAssetBtn, #addExpenseBtn, #runSimulationBtn {
         width: 100%;
-        max-width: 350px; /* Prevent them from being overly wide */
-        /* margin-left: 0; Already auto from previous rule, should still center */
-        /* margin-right: 0; */
     }
 
-    section {
-        margin: 0.75em;
-        padding: 0.75em;
-    }
-
-    .quick-guide {
-        margin: 10px 0.75em;
-        padding: 10px;
-    }
-
-    /* Make table scrollable if it's too wide */
-    #simulationResults {
-        overflow-x: auto;
+    #addAssetBtn,
+    #addExpenseBtn,
+    #runSimulationBtn {
+        width: 100%;
+        max-width: 340px;
     }
 }
 
-/* Mobile-like screens */
-@media (max-width: 480px) {
+@media (max-width: 600px) {
     body {
-        font-size: 0.95em; /* Slightly reduce base font for smaller screens */
+        font-size: 0.97em;
     }
 
-    header h1 {
-        font-size: 1.8em; /* Reduce header font size */
+    header {
+        padding: 2rem 1.25rem 1.75rem;
     }
 
-    h1 { /* Main page title if it exists outside header */
-        font-size: 1.5em;
+    .header-tagline {
+        font-size: 1rem;
     }
 
-    section h2 {
-        font-size: 1.3em;
-    }
-
-    button { /* General buttons */
-        padding: 8px 12px;
-        font-size: 0.95em;
-    }
-
-    #addAssetBtn, #addExpenseBtn, #runSimulationBtn {
-        /* max-width adjustment if needed, but 100% width from tablet is usually fine */
-    }
-
-    ul button { /* Edit/Delete buttons in lists */
-        padding: 4px 8px;
-        font-size: 0.8em;
+    section {
+        padding: 1.25rem;
     }
 
     ul li {
-        padding: 8px;
-        flex-direction: column; /* Stack text and buttons */
-        align-items: flex-start; /* Align items to the start */
-    }
-    ul li div:first-child { /* Assuming text content is not wrapped or is in a div */
-        margin-bottom: 5px; /* Space between text and buttons */
-    }
-    /* For expense list items specifically when stacking */
-    #expenseList li {
-        flex-direction: column; /* Stack text and buttons if not already from general ul li */
+        flex-direction: column;
         align-items: flex-start;
     }
-    #expenseList li button {
-        margin-left: 0; /* Remove left margin if stacked */
-        margin-top: 5px; /* Add top margin if stacked */
-    }
-    /* Ensure portfolio list buttons also stack if its LIs become column-oriented */
-    #portfolioList li {
-        /* If portfolio LIs also stack on mobile, this would be similar to #expenseList li */
-    }
+
+    ul li button,
+    #expenseList li button,
     #portfolioList li button {
-        /* margin-left: 0; */ /* If stacked */
-        /* margin-top: 5px; */ /* If stacked */
-    }
-
-
-    .form-group label {
-        font-size: 0.85em;
-    }
-
-    #simulationResults table {
-        font-size: 0.8em; /* Reduce table font size further */
-    }
-    #simulationResults th,
-    #simulationResults td {
-        padding: 6px; /* Reduce padding in table cells */
-    }
-
-    .quick-guide {
-        margin: 10px 0.5em;
-        padding: 8px;
-    }
-    .quick-guide p, .section-info, .simulation-disclaimer {
-        font-size: 0.9em;
+        margin-left: 0;
+        margin-top: 0.5rem;
     }
 
     .notification {
-        padding: 10px 15px;
-        font-size: 0.9em;
-        width: 90%; /* Make notification wider on small screens */
+        width: min(90%, 24rem);
+    }
+}
+
+@media (max-width: 420px) {
+    header h1 {
+        font-size: 1.85rem;
+    }
+
+    section h2 {
+        font-size: 1.25rem;
+    }
+
+    button,
+    .button-style-label {
+        font-size: 0.95rem;
+        padding: 0.65rem 1rem;
+    }
+
+    .content-wrapper {
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
 }
 
@@ -547,8 +610,23 @@ section > p {
     .button-style-label,
     .form-group input[type="text"],
     .form-group input[type="number"],
-    .form-group select {
+    .form-group select,
+    section,
+    ul li {
         transition: none !important;
         box-shadow: none !important;
+        animation: none !important;
+        transform: none !important;
+    }
+}
+
+@keyframes fadeSlide {
+    0% {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
